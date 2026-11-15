@@ -23,7 +23,7 @@ function render(){if(window.UH_render)window.UH_render();}
 function defaults(){
   var cards=D.SEED_CARDS.map(function(c,i){return {id:'seed'+i,front:c[0],back:c[1],deck:c[2],tags:[c[3]],ease:2.5,ivl:0,reps:0,lapses:0,due:todayKey(),created:todayKey(),last:null};});
   return {v:1,startDate:todayKey(),
-    settings:{theme:'nuit',sound:true,volume:.5,tick:false,autoAdvance:true,breakMin:5,longBreakMin:15,
+    settings:{mode:(window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark',palette:'moss',sound:true,volume:.5,tick:false,autoAdvance:true,breakMin:5,longBreakMin:15,
       blockMins:{anki:10,structure:20,input:15,output:10,log:5},dailyGoal:60,name:'',ambient:false},
     sessions:[],days:{},weekTasks:{},cards:cards,reviews:[],starred:['lt','tv5','rfi'],errors:[],checkpoints:{},milestones:{},
     ui:{route:'dashboard',planWeek:null,libCat:'all',libQuery:'',cardDeck:'all',cardQuery:'',cardSort:'due'}};
@@ -31,6 +31,12 @@ function defaults(){
 function normalize(p){
   var d=defaults(),o=Object.assign({},d,p);
   o.settings=Object.assign({},d.settings,(p.settings&&typeof p.settings==='object')?p.settings:{});
+  var ls=(p.settings&&typeof p.settings==='object')?p.settings:{};
+  if(!ls.mode&&ls.theme)o.settings.mode=ls.theme==='jour'?'light':'dark';
+  if(!ls.palette&&ls.theme)o.settings.palette=ls.theme==='rouge'?'rose':'moss';
+  if(['light','dark'].indexOf(o.settings.mode)<0)o.settings.mode='dark';
+  if(['moss','rose'].indexOf(o.settings.palette)<0)o.settings.palette='moss';
+  delete o.settings.theme;
   o.settings.blockMins=Object.assign({},d.settings.blockMins,(p.settings&&p.settings.blockMins&&typeof p.settings.blockMins==='object')?p.settings.blockMins:{});
   Object.keys(o.settings.blockMins).forEach(function(k){var n=+o.settings.blockMins[k];o.settings.blockMins[k]=(isFinite(n)&&n>0)?Math.min(n,90):(d.settings.blockMins[k]||5);});
   o.ui=Object.assign({},d.ui,(p.ui&&typeof p.ui==='object')?p.ui:{});
@@ -78,7 +84,7 @@ function stats(){var st=streaks(),m=totalMinutes();return{sessions:S.sessions.le
   cardCount:S.cards.length,speakSessions:S.sessions.filter(function(s){return s.speak;}).length,weeksDone:anyWeeksDone(),
   reviews:S.reviews.reduce(function(a,r){return a+r.count;},0)};}
 function cefrPosition(h){
-  var last={lvl:'A0',hours:0,color:'#7B87B4',label:'Starting out'},next=null;
+  var last={lvl:'A0',hours:0,color:'var(--txt3)',label:'Starting out'},next=null;
   for(var i=0;i<D.CEFR.length;i++){if(h<D.CEFR[i].hours){next=D.CEFR[i];if(i>0)last=D.CEFR[i-1];break;}}
   if(!next){var top=D.CEFR[D.CEFR.length-1];return{from:top,to:top,pct:1,hoursToNext:0};}
   return{from:last,to:next,pct:clamp((h-last.hours)/(next.hours-last.hours),0,1),hoursToNext:Math.max(0,next.hours-h)};
@@ -135,8 +141,8 @@ function confetti(){
   var cv=document.createElement('canvas');cv.className='confetti';document.body.appendChild(cv);
   var ctx=cv.getContext('2d'),dpr=Math.min(window.devicePixelRatio||1,2);
   cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';ctx.setTransform(dpr,0,0,dpr,0,0);
-  var cols=['#3D7BFF','#12C2D6','#3FD07A','#FFB020','#FF4FA3','#A78BFA'],P=[];
-  for(var i=0;i<120;i++)P.push({x:innerWidth/2+(Math.random()-.5)*220,y:innerHeight*.42,vx:(Math.random()-.5)*9,vy:-Math.random()*13-4,r:Math.random()*5+3,c:cols[i%6],a:Math.random()*6,va:(Math.random()-.5)*.3});
+  var cs=getComputedStyle(document.documentElement),cols=[cs.getPropertyValue('--accent').trim()||'#A8BB93',cs.getPropertyValue('--soft').trim()||'#5F7152',cs.getPropertyValue('--txt2').trim()||'#B3BCA7'],P=[];
+  for(var i=0;i<120;i++)P.push({x:innerWidth/2+(Math.random()-.5)*220,y:innerHeight*.42,vx:(Math.random()-.5)*9,vy:-Math.random()*13-4,r:Math.random()*5+3,c:cols[i%3],a:Math.random()*6,va:(Math.random()-.5)*.3});
   var t0=performance.now();
   (function frame(t){var dt=(t-t0)/1000;ctx.clearRect(0,0,innerWidth,innerHeight);var alive=false;
     P.forEach(function(p){p.vy+=.34;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;p.vx*=.995;if(p.y<innerHeight+40)alive=true;
@@ -265,10 +271,10 @@ function ringSVG(pct,size,id){var r=size/2-9,c=2*Math.PI*r;
   return '<svg viewBox="0 0 '+size+' '+size+'" aria-hidden="true"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="var(--c-blue)"/><stop offset="55%" stop-color="var(--c-cyan)"/><stop offset="100%" stop-color="var(--c-magenta)"/></linearGradient></defs><circle class="trk" cx="'+size/2+'" cy="'+size/2+'" r="'+r+'"/><circle class="val" cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" stroke="url(#'+id+')" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+(c*(1-clamp(pct,0,1))).toFixed(1)+'"/></svg>';}
 function bar(p,col){return '<div class="bar"><i style="width:'+(clamp(p,0,1)*100).toFixed(1)+'%'+(col?';background:'+col:'')+'"></i></div>';}
 function tile(k,v,d,c){return '<div class="stat" style="--sc:'+c+'"><div class="k">'+esc(k)+'</div><div class="v">'+v+'</div><div class="d">'+esc(d)+'</div></div>';}
-function tagColor(t){return {anki:'#3D7BFF',structure:'#12C2D6',input:'#3FD07A',output:'#FFB020',speak:'#FF4FA3',check:'#FF6B4A',log:'#A78BFA'}[t]||'#8FA0C8';}
+function tagColor(t){return {anki:'var(--accent)',structure:'var(--accent)',input:'var(--accent)',output:'var(--accent)',speak:'var(--accent)',check:'var(--accent)',log:'var(--accent)'}[t]||'var(--txt3)';}
 function promptFor(pid){var a=D.PROMPTS[pid]||D.PROMPTS.p1;return a[Math.floor(Date.now()/86400000)%a.length];}
 function taskHTML(w,i,t){var on=!!S().weekTasks['w'+w+':'+i];
-  return '<button class="task'+(on?' on':'')+(t.check?' checkpoint':'')+'" data-task="'+w+':'+i+'"><span class="box">\u2713</span><span class="tx">'+esc(t.t)+'</span><span class="tg" style="background:'+tagColor(t.tag)+'22;color:'+tagColor(t.tag)+'">'+esc(t.tag)+'</span></button>';}
+  return '<button class="task'+(on?' on':'')+(t.check?' checkpoint':'')+'" data-task="'+w+':'+i+'"><span class="box">\u2713</span><span class="tx">'+esc(t.t)+'</span><span class="tg" style="background:color-mix(in srgb,var(--soft) 40%,transparent);color:var(--accent)">'+esc(t.tag)+'</span></button>';}
 
 /* ── dashboard ── */
 function todayBlocksHTML(){
@@ -287,7 +293,7 @@ function viewDashboard(){
   var nm=S().settings.name?', '+esc(S().settings.name):'';
   var o='<div class="view stack">';
   o+='<section class="hero"><div class="hero-in"><div><div class="eyebrow">'+greet+nm+' · '+esc(new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'}))+'</div><h1>Week '+w+' — <em>'+esc(ph.name)+'</em></h1><p class="lede">'+esc(ph.goal)+'</p><div class="hero-meta"><span class="chip accent">'+esc(ph.cefr)+'</span><span class="chip">This week: <b>'+esc(wd.title)+'</b></span><span class="chip"><b>'+wp.done+'/'+wp.total+'</b> tasks</span><span class="chip"><b>'+due+'</b> cards due</span></div><div class="hero-actions"><button class="btn btn-primary" data-act="go-focus">Start the hour<span class="kbd">F</span></button><button class="btn btn-ghost" data-act="go-cards">Review '+due+' card'+(due===1?'':'s')+'</button><button class="btn btn-ghost" data-act="go-plan">See week '+w+'</button></div></div><div class="ring-wrap"><div class="ring">'+ringSVG(tm/goal,220,'gToday')+'<div class="ring-c"><div class="big">'+tm+'</div><div class="lbl">of '+goal+' min today</div><div class="sm">'+(tm>=goal?'Goal reached. Bravo.':(goal-tm)+' minutes to go')+'</div></div></div><div class="tiny dim">'+dc+' of 5 blocks ticked</div></div></div></section>';
-  o+='<section class="stats">'+tile('Total focus',U.fmtHours(mins)+'<small>h</small>',st.sessions+' sessions logged','#3D7BFF')+tile('Current streak',st.curStreak+'<small>d</small>','best '+st.bestStreak+' days','#FFB020')+tile('Plan progress',Math.round(st.weeksDone/80*100)+'<small>%</small>',st.weeksDone+' of 80 weeks','#3FD07A')+tile('Cards live',S().cards.length,due+' due today','#A78BFA')+tile('Est. level',pos.from.lvl,pos.hoursToNext>0?Math.ceil(pos.hoursToNext)+'h to '+pos.to.lvl:'top of the scale','#FF4FA3')+'</section>';
+  o+='<section class="stats">'+tile('Total focus',U.fmtHours(mins)+'<small>h</small>',st.sessions+' sessions logged','var(--accent)')+tile('Current streak',st.curStreak+'<small>d</small>','best '+st.bestStreak+' days','var(--accent)')+tile('Plan progress',Math.round(st.weeksDone/80*100)+'<small>%</small>',st.weeksDone+' of 80 weeks','var(--accent)')+tile('Cards live',S().cards.length,due+' due today','var(--accent)')+tile('Est. level',pos.from.lvl,pos.hoursToNext>0?Math.ceil(pos.hoursToNext)+'h to '+pos.to.lvl:'top of the scale','var(--accent)')+'</section>';
   o+='<div class="split"><section class="card"><div class="card-h"><h3>Today\'s five blocks</h3><span class="sub">'+U.sessionTotal()+' min template</span></div><div class="blocks" id="todayBlocks">'+todayBlocksHTML()+'</div><div class="note" style="margin-top:14px"><b>Rule one:</b> never skip the cards. On a terrible day, do only the ten minutes of reviews. Streak preservation beats intensity.</div></section><div class="stack">';
   o+='<section class="card tight"><div class="card-h"><h3>Today\'s speaking prompt</h3><span class="sub">say it out loud</span></div><p class="quote" id="promptText" lang="fr">&laquo;&nbsp;'+esc(promptFor(ph.id))+'&nbsp;&raquo;</p><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" data-act="new-prompt">Another prompt</button><button class="btn btn-sm btn-primary" data-act="prompt-focus">Time 10 minutes</button></div></section>';
   o+='<section class="card tight"><div class="card-h"><h3>This week\'s tasks</h3><span class="sub">'+wp.done+'/'+wp.total+'</span></div><div class="tasks">'+wd.tasks.slice(0,4).map(function(t,i){return taskHTML(w,i,t);}).join('')+'</div>'+(wd.tasks.length>4?'<button class="btn btn-sm btn-ghost" style="margin-top:10px;width:100%" data-act="go-plan">All '+wd.tasks.length+' tasks &rarr;</button>':'')+'</section></div></div>';
@@ -305,7 +311,7 @@ function viewPlan(){
   var o='<div class="view stack"><section class="card"><div class="card-h"><h3>80-week map</h3><span class="sub">You are in week '+cw+' · started '+esc(U.niceDate(S().startDate))+'</span></div><div class="weekgrid">'+D.WEEKS.map(function(x){
     var p=U.weekProgress(x.w),pp=U.phaseOf(x.w),cls=p.total&&p.done===p.total?' full':(p.done>0?' part':'');
     return '<button class="wk'+cls+(x.w===cw?' cur':'')+(x.w===sel?' sel':'')+'" style="--wc:'+pp.accent+'" data-week="'+x.w+'" title="Week '+x.w+' · '+esc(x.title)+'">'+(x.checkpoint?'<span class="cp">\u2605</span>':'')+x.w+'<span class="wd"></span></button>';}).join('')+'</div><div class="legend">'+D.PHASES.map(function(p){return '<span class="lg"><i style="background:'+p.accent+'"></i>P'+p.n+' '+esc(p.name)+'</span>';}).join('')+'<span class="lg"><i style="background:var(--c-amber)"></i>\u2605 checkpoint</span></div></section>';
-  o+='<div class="split"><section class="card" style="border-color:'+ph.accent+'55"><div class="card-h"><h3>Week '+sel+' · '+esc(wd.title)+'</h3><span class="sub">'+esc(ph.cefr)+'</span></div><p class="muted tiny" style="margin-bottom:12px">'+esc(wd.detail)+'</p><div class="bar-lbl"><span>Task completion</span><b>'+wp.done+'/'+wp.total+'</b></div>'+bar(wp.pct,ph.accent)+'<div class="tasks" style="margin-top:14px">'+wd.tasks.map(function(t,i){return taskHTML(sel,i,t);}).join('')+'</div>'+(wd.checkpoint?'<div class="note" style="margin-top:14px"><b>Checkpoint week.</b> '+esc(wd.checkpoint)+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" data-week-nav="-1"'+(sel<=1?' disabled':'')+'>&larr; Previous</button><button class="btn btn-sm btn-ghost" data-week-nav="1"'+(sel>=80?' disabled':'')+'>Next &rarr;</button><button class="btn btn-sm btn-ghost" data-act="week-current">Jump to current</button><span class="spacer"></span><button class="btn btn-sm btn-primary" data-act="week-all">Tick all tasks</button></div></section>';
+  o+='<div class="split"><section class="card" style="border-color:var(--line2)"><div class="card-h"><h3>Week '+sel+' · '+esc(wd.title)+'</h3><span class="sub">'+esc(ph.cefr)+'</span></div><p class="muted tiny" style="margin-bottom:12px">'+esc(wd.detail)+'</p><div class="bar-lbl"><span>Task completion</span><b>'+wp.done+'/'+wp.total+'</b></div>'+bar(wp.pct,ph.accent)+'<div class="tasks" style="margin-top:14px">'+wd.tasks.map(function(t,i){return taskHTML(sel,i,t);}).join('')+'</div>'+(wd.checkpoint?'<div class="note" style="margin-top:14px"><b>Checkpoint week.</b> '+esc(wd.checkpoint)+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" data-week-nav="-1"'+(sel<=1?' disabled':'')+'>&larr; Previous</button><button class="btn btn-sm btn-ghost" data-week-nav="1"'+(sel>=80?' disabled':'')+'>Next &rarr;</button><button class="btn btn-sm btn-ghost" data-act="week-current">Jump to current</button><span class="spacer"></span><button class="btn btn-sm btn-primary" data-act="week-all">Tick all tasks</button></div></section>';
   o+='<div class="stack"><section class="card"><div class="card-h"><h3>Phase '+ph.n+' playbook</h3><span class="sub">'+esc(ph.name)+'</span></div><p class="muted tiny" style="margin-bottom:14px">'+esc(ph.goal)+'</p><div class="blocks">'+U.blockList().map(function(b){return '<div class="blk" style="--bc:'+b.color+'"><div class="blk-ic">'+b.icon+'</div><div><div class="blk-t">'+esc(b.name)+'<span class="mins">'+b.min+' min</span></div><div class="blk-d">'+esc(ph.blocks[b.id])+'</div></div><div></div></div>';}).join('')+'</div><div class="note" style="margin-top:14px"><b>Focus note.</b> '+esc(ph.focusNote)+'</div></section>';
   if(wd.checkpoint){var cp=S().checkpoints[sel];
     o+='<section class="card"><div class="card-h"><h3>Checkpoint result</h3><span class="sub">week '+sel+'</span></div><label class="field"><span>Outcome / score</span><input type="text" id="cpResult" value="'+esc(cp?cp.result:'')+'" placeholder="e.g. A2 listening 18/25, reading 20/25"></label><label class="field"><span>What to fix next</span><textarea id="cpNote" rows="2" placeholder="Numbers above 20 still slow. Past-tense agreement.">'+esc(cp?cp.note:'')+'</textarea></label><button class="btn btn-sm btn-primary" data-cp-save="'+sel+'">Save checkpoint</button>'+(cp?'<span class="tiny dim" style="margin-left:10px">saved '+esc(U.niceDate(cp.date))+'</span>':'')+'</section>';}
@@ -328,7 +334,7 @@ function viewFocus(){
   o+='<div class="divider"></div><button class="toggle'+(S().settings.autoAdvance?' on':'')+'" data-toggle="autoAdvance"><span>Auto breaks between blocks</span><span class="sw"></span></button>';
   o+='<button class="toggle'+(S().settings.tick?' on':'')+'" data-toggle="tick"><span>Final-10-second ticks</span><span class="sw"></span></button>';
   o+='<button class="toggle'+(S().settings.ambient?' on':'')+'" data-toggle="ambient"><span>Ambient focus drone</span><span class="sw"></span></button>';
-  o+='<div class="ctrl-row"><span class="ctrl-lbl"><span>Theme</span></span><div class="seg" data-seg="theme"><button data-val="nuit"'+(S().settings.theme==='nuit'?' class="on"':'')+'>Nuit</button><button data-val="jour"'+(S().settings.theme==='jour'?' class="on"':'')+'>Jour</button><button data-val="rouge"'+(S().settings.theme==='rouge'?' class="on"':'')+'>Rouge</button></div></div>';
+  o+='<div class="ctrl-row"><span class="ctrl-lbl"><span>Appearance</span></span>'+themeSegs()+'</div>';
   o+='<div style="display:flex;gap:8px"><button class="btn btn-sm btn-ghost" style="flex:1" data-act="preset-default">Reset 60-min template</button><button class="btn btn-sm btn-ghost" style="flex:1" data-act="preset-short">Short 30-min day</button></div>';
   o+='</div></section></aside></div>';
   o+='<section class="card"><div class="card-h"><h3>Today\'s blocks</h3><span class="sub">tick manually if you studied away from the timer</span></div><div class="blocks" id="todayBlocks">'+todayBlocksHTML()+'</div></section></div>';
@@ -360,7 +366,7 @@ window.UH_renderTimerUI=function(){
   }
   document.title=(T.running?U.fmtClock(left)+' \u00B7 ':'')+'Une Heure \u2014 French Focus Studio';
   var card=$('#timerCard');if(!card)return;
-  card.style.setProperty('--tc',T.mode==='break'?'#A78BFA':b.color);
+  card.style.setProperty('--tc',T.mode==='break'?'var(--accent)':b.color);
   var tot=T.mode==='break'?Math.max(1,(T.breaksTaken%3===0?S().settings.longBreakMin:S().settings.breakMin)*60):Math.max(1,T.total);
   var cl=$('#clock');if(cl)cl.textContent=U.fmtClock(left);
   var sub=$('#clockSub');if(sub)sub.textContent=T.mode==='break'?(T.running?'break running':'break paused'):(T.running?'focusing':(left<T.total?'paused':'ready'));
@@ -428,7 +434,7 @@ function viewCards(){
   else{
     o+='<div class="tbl-wrap"><table><thead><tr><th class="sortable" data-sort="front">French</th><th>Meaning</th><th class="sortable" data-sort="deck">Deck</th><th class="sortable" data-sort="due">Due</th><th class="sortable" data-sort="reps">Reps</th><th></th></tr></thead><tbody>'+list.slice(0,200).map(function(c){
       var overdue=!c.due||U.dayDiff(c.due,U.todayKey())>=0;
-      var state=!c.reps?['new','#A78BFA']:(overdue?['due','#FFB020']:['learned','#3FD07A']);
+      var state=!c.reps?['new','var(--accent)']:(overdue?['due','var(--accent)']:['learned','var(--accent)']);
       return '<tr><td class="fr" lang="fr">'+esc(c.front)+'</td><td class="muted">'+esc(c.back)+'</td><td><span class="tag">'+esc(c.deck||'Unsorted')+'</span></td><td><span class="state-dot" style="color:'+state[1]+'"><i style="background:'+state[1]+'"></i>'+state[0]+'</span> <span class="tiny dim">'+esc(c.due||'')+'</span></td><td class="mono">'+(c.reps||0)+'</td><td style="white-space:nowrap"><button class="rowbtn" data-card-edit="'+c.id+'" title="Edit">\u270E</button><button class="rowbtn del" data-card-del="'+c.id+'" title="Delete">\u2715</button></td></tr>';}).join('')+'</tbody></table></div>';
     if(list.length>200)o+='<p class="tiny dim" style="margin-top:10px">Showing the first 200 of '+list.length+'. Narrow the search to see more.</p>';
   }
@@ -447,13 +453,13 @@ function viewLibrary(){
     if(cat==='starred'){if(S().starred.indexOf(r.id)<0)return false;}
     else if(cat!=='all'&&r.cat!==cat)return false;
     if(!q)return true;return (r.name+' '+r.desc+' '+r.note+' '+r.level+' '+r.use).toLowerCase().indexOf(q)>=0;});
-  var o='<div class="view stack"><section class="card"><div class="card-h"><h3>Free resource library</h3><span class="sub">'+D.RESOURCES.length+' resources · every one usable without paying</span></div><div class="filters" style="margin-bottom:12px"><div class="search"><input type="text" id="libSearch" placeholder="Search resources…" value="'+esc(S().ui.libQuery||'')+'"></div></div><div class="filters">'+D.CATS.map(function(c){return '<button class="fchip'+(cat===c.id?' on':'')+'" style="--fc:'+c.color+'" data-cat="'+c.id+'">'+esc(c.label)+'</button>';}).join('')+'<button class="fchip'+(cat==='starred'?' on':'')+'" style="--fc:#FFB020" data-cat="starred">\u2605 Starred ('+S().starred.length+')</button></div></section>';
+  var o='<div class="view stack"><section class="card"><div class="card-h"><h3>Free resource library</h3><span class="sub">'+D.RESOURCES.length+' resources · every one usable without paying</span></div><div class="filters" style="margin-bottom:12px"><div class="search"><input type="text" id="libSearch" placeholder="Search resources…" value="'+esc(S().ui.libQuery||'')+'"></div></div><div class="filters">'+D.CATS.map(function(c){return '<button class="fchip'+(cat===c.id?' on':'')+'" style="--fc:'+c.color+'" data-cat="'+c.id+'">'+esc(c.label)+'</button>';}).join('')+'<button class="fchip'+(cat==='starred'?' on':'')+'" style="--fc:var(--accent)" data-cat="starred">\u2605 Starred ('+S().starred.length+')</button></div></section>';
   if(!list.length)o+='<section class="card"><div class="empty"><div class="em">\u2726</div><h3>Nothing matches</h3><p class="tiny">Try another category or clear the search.</p></div></section>';
   else{o+='<div class="res-grid">'+list.map(function(r){
-    var col=(D.CATS.filter(function(c){return c.id===r.cat;})[0]||{}).color||'#3D7BFF';
+    var col=(D.CATS.filter(function(c){return c.id===r.cat;})[0]||{}).color||'var(--accent)';
     var st=S().starred.indexOf(r.id)>=0;
-    return '<article class="res" style="--rc:'+col+'"><div class="res-top"><h4>'+esc(r.name)+'</h4><span class="res-badge'+(r.warn?' warn':'')+'">'+esc(r.badge)+'</span></div><div class="res-meta"><span class="chip" style="border-color:'+col+'55;color:'+col+'">'+esc(r.level)+'</span><span class="chip">'+esc((D.CATS.filter(function(c){return c.id===r.cat;})[0]||{}).label||r.cat)+'</span></div><p class="res-desc">'+esc(r.desc)+'</p><div class="res-note">'+esc(r.note)+'</div><div class="res-foot"><span class="res-use">'+esc(r.use)+'</span><span class="spacer"></span><button class="star'+(st?' on':'')+'" data-star="'+r.id+'" title="Star">\u2605</button><a class="btn btn-sm btn-primary" href="'+esc(r.url)+'" target="_blank" rel="noopener noreferrer">Open \u2197</a></div></article>';}).join('')+'</div>';}
-  o+='<section class="card"><div class="card-h"><h3>Free-tier traps</h3></div><div class="rules">'+D.RULES.slice(6).concat([['Anki on iPhone','The desktop app, AnkiDroid and AnkiWeb are free. Only the official iOS app is paid — review in the browser instead.','#3D7BFF'],['Coffee Break','The podcast audio for all four seasons is free. The video lessons, notes and exercise packs are the paid part.','#12C2D6']]).map(function(r){return '<div class="rule" style="--rlc:'+r[2]+'"><b>'+esc(r[0])+'</b><span>'+esc(r[1])+'</span></div>';}).join('')+'</div></section></div>';
+    return '<article class="res" style="--rc:'+col+'"><div class="res-top"><h4>'+esc(r.name)+'</h4><span class="res-badge'+(r.warn?' warn':'')+'">'+esc(r.badge)+'</span></div><div class="res-meta"><span class="chip" style="border-color:var(--line2);color:var(--accent)">'+esc(r.level)+'</span><span class="chip">'+esc((D.CATS.filter(function(c){return c.id===r.cat;})[0]||{}).label||r.cat)+'</span></div><p class="res-desc">'+esc(r.desc)+'</p><div class="res-note">'+esc(r.note)+'</div><div class="res-foot"><span class="res-use">'+esc(r.use)+'</span><span class="spacer"></span><button class="star'+(st?' on':'')+'" data-star="'+r.id+'" title="Star">\u2605</button><a class="btn btn-sm btn-primary" href="'+esc(r.url)+'" target="_blank" rel="noopener noreferrer">Open \u2197</a></div></article>';}).join('')+'</div>';}
+  o+='<section class="card"><div class="card-h"><h3>Free-tier traps</h3></div><div class="rules">'+D.RULES.slice(6).concat([['Anki on iPhone','The desktop app, AnkiDroid and AnkiWeb are free. Only the official iOS app is paid — review in the browser instead.','var(--accent)'],['Coffee Break','The podcast audio for all four seasons is free. The video lessons, notes and exercise packs are the paid part.','var(--accent)']]).map(function(r){return '<div class="rule" style="--rlc:'+r[2]+'"><b>'+esc(r[0])+'</b><span>'+esc(r[1])+'</span></div>';}).join('')+'</div></section></div>';
   return o;
 }
 
@@ -463,12 +469,12 @@ function chartMinutes(){
   for(var i=29;i>=0;i--){var k=U.todayKey(U.addDays(new Date(),-i));days.push({k:k,v:m[k]||0});}
   var W=760,H=200,pl=34,pb=24,max=Math.max(60,Math.max.apply(null,days.map(function(d){return d.v;})));
   var bw=(W-pl-10)/days.length,s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="Minutes studied over the last 30 days">';
-  s+='<defs><linearGradient id="gBar" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#3D7BFF"/><stop offset="100%" stop-color="#12C2D6"/></linearGradient></defs>';
+  s+='<defs><linearGradient id="gBar" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="var(--accent)"/><stop offset="100%" stop-color="var(--accent)"/></linearGradient></defs>';
   [0,.25,.5,.75,1].forEach(function(f){var y=H-pb-(H-pb-14)*f;s+='<line class="gl" x1="'+pl+'" y1="'+y+'" x2="'+(W-6)+'" y2="'+y+'"/><text x="4" y="'+(y+3)+'">'+Math.round(max*f)+'</text>';});
   var goal=S().settings.dailyGoal||60,gy=H-pb-(H-pb-14)*(goal/max);
-  s+='<line x1="'+pl+'" y1="'+gy+'" x2="'+(W-6)+'" y2="'+gy+'" stroke="#FFB020" stroke-width="1.5" stroke-dasharray="5 4"/><text x="'+(W-6)+'" y="'+(gy-5)+'" text-anchor="end" fill="#FFB020">goal '+goal+'</text>';
+  s+='<line x1="'+pl+'" y1="'+gy+'" x2="'+(W-6)+'" y2="'+gy+'" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="5 4"/><text x="'+(W-6)+'" y="'+(gy-5)+'" text-anchor="end" fill="var(--accent)">goal '+goal+'</text>';
   days.forEach(function(d,i){var h=(H-pb-14)*(d.v/max),x=pl+i*bw+1.5,y=H-pb-h;
-    s+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+Math.max(2,bw-3).toFixed(1)+'" height="'+Math.max(0,h).toFixed(1)+'" rx="3" fill="'+(d.v>=goal?'#3FD07A':'url(#gBar)')+'" opacity="'+(d.v?1:.25)+'"><title>'+d.k+': '+d.v+' min</title></rect>';
+    s+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+Math.max(2,bw-3).toFixed(1)+'" height="'+Math.max(0,h).toFixed(1)+'" rx="3" fill="'+(d.v>=goal?'var(--accent)':'var(--soft)')+'" opacity="'+(d.v?1:.25)+'"><title>'+d.k+': '+d.v+' min</title></rect>';
     if(i%5===0)s+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle">'+U.parseKey(d.k).getDate()+'</text>';});
   s+='<line class="axis" x1="'+pl+'" y1="'+(H-pb)+'" x2="'+(W-6)+'" y2="'+(H-pb)+'"/></svg>';
   return s;
@@ -482,14 +488,14 @@ function chartCumulative(){
   var maxH=Math.max(10,total/60);
   var X=function(i){return pl+(W-pl-10)*(i/span);},Y=function(h){return H-pb-(H-pb-16)*(h/maxH);};
   var s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative hours against CEFR thresholds">';
-  s+='<defs><linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3D7BFF" stop-opacity=".55"/><stop offset="100%" stop-color="#FF4FA3" stop-opacity=".04"/></linearGradient></defs>';
+  s+='<defs><linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity=".55"/><stop offset="100%" stop-color="var(--accent)" stop-opacity=".04"/></linearGradient></defs>';
   D.CEFR.forEach(function(c){if(c.hours>maxH)return;var y=Y(c.hours);
     s+='<line x1="'+pl+'" y1="'+y.toFixed(1)+'" x2="'+(W-8)+'" y2="'+y.toFixed(1)+'" stroke="'+c.color+'" stroke-width="1.2" stroke-dasharray="4 5" opacity=".8"/><text x="'+(W-10)+'" y="'+(y-4).toFixed(1)+'" text-anchor="end" fill="'+c.color+'">'+c.lvl+' · '+c.hours+'h</text>';});
   var d='M'+X(0).toFixed(1)+' '+Y(pts[0].h).toFixed(1);
   pts.forEach(function(p){d+=' L'+X(p.i).toFixed(1)+' '+Y(p.h).toFixed(1);});
   s+='<path d="'+d+' L'+X(span).toFixed(1)+' '+(H-pb)+' L'+pl+' '+(H-pb)+' Z" fill="url(#gArea)"/>';
-  s+='<path d="'+d+'" fill="none" stroke="#12C2D6" stroke-width="2.4" stroke-linejoin="round"/>';
-  s+='<circle cx="'+X(span).toFixed(1)+'" cy="'+Y(total/60).toFixed(1)+'" r="4.5" fill="#FF4FA3"/>';
+  s+='<path d="'+d+'" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/>';
+  s+='<circle cx="'+X(span).toFixed(1)+'" cy="'+Y(total/60).toFixed(1)+'" r="4.5" fill="var(--accent)"/>';
   s+='<line class="axis" x1="'+pl+'" y1="'+(H-pb)+'" x2="'+(W-8)+'" y2="'+(H-pb)+'"/>';
   s+='<text x="4" y="16">'+maxH.toFixed(0)+'h</text><text x="4" y="'+(H-pb)+'">0h</text><text x="'+pl+'" y="'+(H-8)+'">'+esc(U.niceDate(S().startDate))+'</text><text x="'+(W-8)+'" y="'+(H-8)+'" text-anchor="end">today</text></svg>';
   return s;
@@ -508,9 +514,9 @@ function viewProgress(){
   var byBlock={};D.BLOCKS.forEach(function(b){byBlock[b.id]=0;});
   S().sessions.forEach(function(s){(s.blocks||[]).forEach(function(id){if(byBlock[id]!=null)byBlock[id]+=S().settings.blockMins[id]||0;});});
   var totB=Object.keys(byBlock).reduce(function(a,k){return a+byBlock[k];},0)||1;
-  var o='<div class="view stack"><section class="stats">'+tile('Focused hours',U.fmtHours(mins)+'<small>h</small>',st.sessions+' sessions','#3D7BFF')+tile('Best streak',st.bestStreak+'<small>d</small>','currently '+st.curStreak,'#FFB020')+tile('Cards graded',st.reviews,S().cards.length+' in collection','#A78BFA')+tile('Weeks complete',st.weeksDone+'<small>/80</small>',Math.round(st.weeksDone/80*100)+'% of the plan','#3FD07A')+tile('Speaking sessions',st.speakSessions,'output block completed','#FF4FA3')+'</section>';
+  var o='<div class="view stack"><section class="stats">'+tile('Focused hours',U.fmtHours(mins)+'<small>h</small>',st.sessions+' sessions','var(--accent)')+tile('Best streak',st.bestStreak+'<small>d</small>','currently '+st.curStreak,'var(--accent)')+tile('Cards graded',st.reviews,S().cards.length+' in collection','var(--accent)')+tile('Weeks complete',st.weeksDone+'<small>/80</small>',Math.round(st.weeksDone/80*100)+'% of the plan','var(--accent)')+tile('Speaking sessions',st.speakSessions,'output block completed','var(--accent)')+'</section>';
   o+='<section class="card"><div class="card-h"><h3>Where you are on the CEFR ladder</h3><span class="sub">estimate from focused hours · Cambridge guided-learning figures</span></div><div class="bar-lbl"><span>'+esc(pos.from.lvl)+' → '+esc(pos.to.lvl)+' · '+esc(pos.to.label)+'</span><b>'+Math.round(pos.pct*100)+'%</b></div>'+bar(pos.pct,pos.to.color)+'<div class="legend">'+D.CEFR.map(function(c){return '<span class="lg"><i style="background:'+c.color+'"></i>'+c.lvl+' · '+c.hours+'h · '+esc(c.label)+'</span>';}).join('')+'</div><div class="note" style="margin-top:14px"><b>'+Math.ceil(pos.hoursToNext)+' focused hours</b> to '+pos.to.lvl+' at your current pace — about '+Math.ceil(pos.hoursToNext/(Math.max(1,S().settings.dailyGoal)/60))+' days at '+S().settings.dailyGoal+' min/day. Passive listening during commutes shortens this without touching your hour.</div></section>';
-  o+='<div class="split"><section class="card"><div class="card-h"><h3>Last 30 days</h3><span class="sub">minutes per day</span></div>'+chartMinutes()+'<div class="legend"><span class="lg"><i style="background:linear-gradient(180deg,#12C2D6,#3D7BFF)"></i>studied</span><span class="lg"><i style="background:#3FD07A"></i>goal reached</span><span class="lg"><i style="background:#FFB020"></i>daily goal line</span></div></section>';
+  o+='<div class="split"><section class="card"><div class="card-h"><h3>Last 30 days</h3><span class="sub">minutes per day</span></div>'+chartMinutes()+'<div class="legend"><span class="lg"><i style="background:var(--soft)"></i>studied</span><span class="lg"><i style="background:var(--accent)"></i>goal reached</span><span class="lg"><i style="background:var(--accent)"></i>daily goal line</span></div></section>';
   o+='<section class="card"><div class="card-h"><h3>Cumulative hours vs CEFR</h3><span class="sub">since '+esc(U.niceDate(S().startDate))+'</span></div>'+chartCumulative()+'</section></div>';
   o+='<section class="card"><div class="card-h"><h3>Consistency</h3><span class="sub">last 27 weeks</span></div>'+heatmap()+'<div class="legend"><span class="lg"><i style="background:var(--bg2);border:1px solid var(--line)"></i>none</span><span class="lg"><i class="hm-lvl1" style="width:11px;height:11px;border-radius:3px"></i>&lt;20m</span><span class="lg"><i class="hm-lvl2" style="width:11px;height:11px;border-radius:3px"></i>&lt;45m</span><span class="lg"><i class="hm-lvl3" style="width:11px;height:11px;border-radius:3px"></i>&lt;75m</span><span class="lg"><i class="hm-lvl4" style="width:11px;height:11px;border-radius:3px"></i>75m+</span></div></section>';
   o+='<div class="split"><section class="card"><div class="card-h"><h3>Time by block</h3><span class="sub">is the hour balanced?</span></div><div class="stack" style="gap:11px">'+D.BLOCKS.map(function(b){
@@ -528,10 +534,13 @@ function viewProgress(){
 }
 
 /* ── settings drawer ── */
+function themeSegs(){var s=S().settings;
+  function seg(k,opts){return '<div class="seg" data-seg="'+k+'">'+opts.map(function(o){return '<button data-val="'+o[0]+'"'+(s[k]===o[0]?' class="on"':'')+'>'+o[1]+'</button>';}).join('')+'</div>';}
+  return seg('mode',[['light','Light'],['dark','Dark']])+seg('palette',[['moss','Mossy green'],['rose','Rose gold']]);}
 function drawerHTML(){
   var s=S().settings;
   return '<div class="dw-sec"><h4>You</h4><label class="field"><span>Name (used in the greeting)</span><input type="text" id="setName" value="'+esc(s.name)+'" placeholder="Camille"></label><label class="field"><span>Plan start date</span><input type="date" id="setStart" value="'+esc(S().startDate)+'"></label><label class="field"><span>Daily goal (minutes)</span><input type="number" id="setGoal" min="10" max="240" step="5" value="'+s.dailyGoal+'"></label></div>'+
-  '<div class="dw-sec"><h4>Appearance</h4><div class="seg" data-seg="theme"><button data-val="nuit"'+(s.theme==='nuit'?' class="on"':'')+'>Nuit</button><button data-val="jour"'+(s.theme==='jour'?' class="on"':'')+'>Jour</button><button data-val="rouge"'+(s.theme==='rouge'?' class="on"':'')+'>Rouge</button></div><button class="toggle'+(s.sound?' on':'')+'" data-toggle="sound"><span>Sound effects</span><span class="sw"></span></button><button class="toggle'+(s.ambient?' on':'')+'" data-toggle="ambient"><span>Ambient focus drone</span><span class="sw"></span></button></div>'+
+  '<div class="dw-sec"><h4>Appearance</h4>'+themeSegs()+'<button class="toggle'+(s.sound?' on':'')+'" data-toggle="sound"><span>Sound effects</span><span class="sw"></span></button><button class="toggle'+(s.ambient?' on':'')+'" data-toggle="ambient"><span>Ambient focus drone</span><span class="sw"></span></button></div>'+
   '<div class="dw-sec" id="dataSec"><h4>Your data</h4><p class="tiny dim">Everything is stored in this browser only. Export regularly — clearing site data erases your progress.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm btn-primary" data-act="export">Export JSON backup</button><button class="btn btn-sm btn-ghost" data-act="export-csv">Export sessions CSV</button><button class="btn btn-sm btn-ghost" data-act="import">Import backup</button></div><input type="file" id="importFile" accept="application/json" hidden></div>'+
   '<div class="dw-sec"><h4>Danger zone</h4><button class="btn btn-sm btn-danger-ghost" data-act="reset-all">Erase everything and start over</button></div>'+
   '<div class="dw-sec" id="aboutSec"><h4>About the method</h4><p class="tiny muted">One focused hour, split 10 / 20 / 15 / 10 / 5 across cards, structured input, listening, speaking and logging. Eighty weeks mapped from zero to B2 using only free resources. Passive listening outside the hour is a bonus multiplier, never a replacement.</p><p class="tiny dim">Level estimates use Cambridge guided-learning-hour figures (A1 ~100h, A2 ~200h, B1 ~400h, B2 ~600h). They are a guide, not a certificate.</p><p class="tiny dim">Keyboard: <b>F</b> focus · <b>C</b> cards · <b>P</b> plan · <b>L</b> library · <b>G</b> progress · <b>Space</b> play/pause or reveal · <b>1–4</b> grade · <b>S</b> mute · <b>Esc</b> close.</p></div>';
@@ -611,7 +620,9 @@ function importJSON(file){
   };
   fr.readAsText(file);
 }
-function applyTheme(){document.documentElement.setAttribute('data-theme',S().settings.theme||'nuit');}
+function applyTheme(){var s=S().settings,h=document.documentElement,m=document.querySelector('meta[name="theme-color"]');
+  h.removeAttribute('data-theme');h.setAttribute('data-mode',s.mode||'dark');h.setAttribute('data-palette',s.palette||'moss');
+  if(m)m.setAttribute('content',{'moss-dark':'#1A1F19','moss-light':'#F1F2EA','rose-dark':'#1F1819','rose-light':'#F7EFEC'}[(s.palette||'moss')+'-'+(s.mode||'dark')]);}
 
 /* ── global events ── */
 document.addEventListener('click',function(ev){
@@ -706,8 +717,8 @@ document.addEventListener('click',function(ev){
     $('#soundBtn').setAttribute('aria-pressed',String(S().settings.sound));
     $('#soundIcon').innerHTML=S().settings.sound?'&#9834;':'&#9835;&#822;';
     return;}
-  if(d.val&&t.parentNode.dataset.seg==='theme'){S().settings.theme=d.val;applyTheme();U.save();U.play('click');
-    $$('[data-seg="theme"] button').forEach(function(b){b.classList.toggle('on',b.dataset.val===d.val);});return;}
+  if(d.val&&(t.parentNode.dataset.seg==='mode'||t.parentNode.dataset.seg==='palette')){var sk=t.parentNode.dataset.seg;S().settings[sk]=d.val;applyTheme();U.save();U.play('click');
+    $$('[data-seg="'+sk+'"] button').forEach(function(b){b.classList.toggle('on',b.dataset.val===d.val);});return;}
 
   if(d.act==='new-prompt'){
     var arr=D.PROMPTS[U.phaseOf(U.currentWeek()).id],el=$('#promptText');

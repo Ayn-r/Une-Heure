@@ -1,7 +1,7 @@
 /* Une Heure - curriculum + resource data. Every listed resource is free to use. */
 window.UH_DATA = (function () {
 var PHASES = [
-  { id:'p1', n:1, name:'Build the engine', weeks:[1,4], cefr:'A1 foundation', accent:'#3D7BFF',
+  { id:'p1', n:1, name:'Build the engine', weeks:[1,4], cefr:'A1 foundation', accent:'var(--accent)',
     goal:'Understand how French works, lock in pronunciation early, bank your first ~300 words.',
     blocks:{
       anki:'Phonology sub-deck first, then the main course at 10 new cards/day. Expand the sub-decks so you land on the main course, not verb conjugations.',
@@ -12,7 +12,7 @@ var PHASES = [
     },
     focusNote:'Pronunciation month: nasal vowels, u vs ou, silent final consonants, liaison. Check every uncertain word on Forvo.',
     checkpoint:{ week:4, label:'TV5MONDE 14-question level test, plus record a 60-second self-introduction and keep the file.' } },
-  { id:'p2', n:2, name:'Reach A2', weeks:[5,12], cefr:'A2', accent:'#12C2D6',
+  { id:'p2', n:2, name:'Reach A2', weeks:[5,12], cefr:'A2', accent:'var(--accent)',
     goal:'Handle everyday situations. Present, past and near future all working.',
     blocks:{
       anki:'15 new cards/day. Add your own sentence cards from TV5MONDE and Coffee Break - yours beat premade ones.',
@@ -23,7 +23,7 @@ var PHASES = [
     },
     focusNote:'Start speaking with humans in week 6. Text plus voice notes on HelloTalk. Low pressure, high value.',
     checkpoint:{ week:12, label:'Free DELF A2 sample paper (France Education international): listening and reading, graded with the official key.' } },
-  { id:'p3', n:3, name:'Consolidate to early B1', weeks:[13,26], cefr:'A2 to B1', accent:'#3FD07A',
+  { id:'p3', n:3, name:'Consolidate to early B1', weeks:[13,26], cefr:'A2 to B1', accent:'var(--accent)',
     goal:'Past tenses fluent, real conversations survivable, listening takes off.',
     blocks:{
       anki:'15-20 new/day. Move into deck Part 2 (words 500-5000) and start the irregular-verb sub-deck.',
@@ -34,7 +34,7 @@ var PHASES = [
     },
     focusNote:'Pronunciation still shaky? Swap the structure block for 10 minutes of public-domain FSI French Basic drills.',
     checkpoint:{ week:26, label:'Full DELF B1 sample paper, all four sections. Grade writing and speaking against the official rubrics.' } },
-  { id:'p4', n:4, name:'Push to B1', weeks:[27,52], cefr:'B1', accent:'#FFB020',
+  { id:'p4', n:4, name:'Push to B1', weeks:[27,52], cefr:'B1', accent:'var(--accent)',
     goal:'Independent user: express opinions, narrate, argue, understand normal-speed French.',
     blocks:{
       anki:'Shift to your OWN sentence cards mined from what you actually read and watch. Language Reactor exports to Anki with audio.',
@@ -45,7 +45,7 @@ var PHASES = [
     },
     focusNote:'Dictation: the TV5MONDE dictée d\'Archibald forces you to hear every sound and fixes agreement at the same time.',
     checkpoint:{ week:52, label:'TV5MONDE TCF 90-minute mock exam under real conditions - a calibrated CEFR estimate, free.' } },
-  { id:'p5', n:5, name:'Toward B2', weeks:[53,80], cefr:'B2', accent:'#FF4FA3',
+  { id:'p5', n:5, name:'Toward B2', weeks:[53,80], cefr:'B2', accent:'var(--accent)',
     goal:'Work and study level French. Only if you want it.',
     blocks:{
       anki:'Mining only. Every card comes from something you chose to read or watch.',
@@ -58,11 +58,11 @@ var PHASES = [
     checkpoint:{ week:80, label:'DELF B2 sample paper, all four papers, timed. Compare against the examiner descriptors.' } }
 ];
 var BLOCKS = [
-  { id:'anki',      name:'Card review',         short:'Cards',     min:10, icon:'\u29C9', color:'#3D7BFF', tip:'Reviews first, then new cards. Never skip - even on bad days.' },
-  { id:'structure', name:'Structured input',    short:'Structure', min:20, icon:'\u25C8', color:'#12C2D6', tip:'Language Transfer track or Coffee Break lesson. Answer out loud, always.' },
-  { id:'input',     name:'Listening / reading', short:'Input',     min:15, icon:'\u25CD', color:'#3FD07A', tip:'Transcript-based: listen, read, listen again.' },
-  { id:'output',    name:'Speaking out loud',   short:'Output',    min:10, icon:'\u25C9', color:'#FFB020', tip:'Shadow, retell, or record yourself. Free, always available, non-negotiable.' },
-  { id:'log',       name:'Log and load',        short:'Log',       min:5,  icon:'\u270E', color:'#FF4FA3', tip:'Add 5-10 sentences as cards; write down tomorrow\'s first task.' }
+  { id:'anki',      name:'Card review',         short:'Cards',     min:10, icon:'\u29C9', color:'var(--accent)', tip:'Reviews first, then new cards. Never skip - even on bad days.' },
+  { id:'structure', name:'Structured input',    short:'Structure', min:20, icon:'\u25C8', color:'var(--accent)', tip:'Language Transfer track or Coffee Break lesson. Answer out loud, always.' },
+  { id:'input',     name:'Listening / reading', short:'Input',     min:15, icon:'\u25CD', color:'var(--accent)', tip:'Transcript-based: listen, read, listen again.' },
+  { id:'output',    name:'Speaking out loud',   short:'Output',    min:10, icon:'\u25C9', color:'var(--accent)', tip:'Shadow, retell, or record yourself. Free, always available, non-negotiable.' },
+  { id:'log',       name:'Log and load',        short:'Log',       min:5,  icon:'\u270E', color:'var(--accent)', tip:'Add 5-10 sentences as cards; write down tomorrow\'s first task.' }
 ];
 var PREMIERE = ['Greetings','Hobbies','Meals','Accommodation','Work','Health','Trips'];
 function buildWeeks(){
@@ -246,10 +246,10 @@ var RESOURCES = [
     note:'Grade your own writing and speaking against the published descriptors - surprisingly accurate.', use:'Every checkpoint' }
 ];
 var CATS = [
-  {id:'all',label:'Everything',color:'#8FA0C8'},{id:'structure',label:'Core course',color:'#3D7BFF'},
-  {id:'vocab',label:'Vocabulary',color:'#12C2D6'},{id:'listening',label:'Listening',color:'#3FD07A'},
-  {id:'grammar',label:'Grammar',color:'#FFB020'},{id:'speaking',label:'Speaking',color:'#FF4FA3'},
-  {id:'tools',label:'Tools',color:'#A78BFA'},{id:'testing',label:'Testing',color:'#FF6B4A'}
+  {id:'all',label:'Everything',color:'var(--txt3)'},{id:'structure',label:'Core course',color:'var(--accent)'},
+  {id:'vocab',label:'Vocabulary',color:'var(--accent)'},{id:'listening',label:'Listening',color:'var(--accent)'},
+  {id:'grammar',label:'Grammar',color:'var(--accent)'},{id:'speaking',label:'Speaking',color:'var(--accent)'},
+  {id:'tools',label:'Tools',color:'var(--accent)'},{id:'testing',label:'Testing',color:'var(--accent)'}
 ];
 var SEED_CARDS = [
   ['je voudrais','I would like','Essentials','polite'],
@@ -296,20 +296,20 @@ var MILESTONES = [
   {id:'century',icon:'\u25C6',name:'100 hours',desc:'Bank 100 focused hours.',k:'hours',need:100}
 ];
 var RULES = [
-  ['Never skip the cards','On a terrible day, do only the 10 minutes of reviews. Streak preservation beats intensity.','#3D7BFF'],
-  ['Answer out loud, always','Language Transfer works by making you construct sentences. Passive listening wastes the method.','#12C2D6'],
-  ['Passive listening is bonus','Commute, chores, walking. It multiplies progress but cannot replace the focused hour.','#3FD07A'],
-  ['Do not collect resources','Pick the ones named in each phase and ignore the rest until the phase changes.','#FFB020'],
-  ['Speak from week 6, badly','Waiting until you are ready is the number one reason people plateau at reading-only French.','#FF4FA3'],
-  ['Keep an error log','Every partner correction goes into a note, then into a card. Recurring errors are your real curriculum.','#A78BFA'],
-  ['Mind the free-tier traps','The Anki iOS app is paid (use AnkiWeb). progress.lawlessfrench.com caps at 10 kwizzes per month (use www). Coffee Break course packs are paid; the podcast is not.','#FF6B4A']
+  ['Never skip the cards','On a terrible day, do only the 10 minutes of reviews. Streak preservation beats intensity.','var(--accent)'],
+  ['Answer out loud, always','Language Transfer works by making you construct sentences. Passive listening wastes the method.','var(--accent)'],
+  ['Passive listening is bonus','Commute, chores, walking. It multiplies progress but cannot replace the focused hour.','var(--accent)'],
+  ['Do not collect resources','Pick the ones named in each phase and ignore the rest until the phase changes.','var(--accent)'],
+  ['Speak from week 6, badly','Waiting until you are ready is the number one reason people plateau at reading-only French.','var(--accent)'],
+  ['Keep an error log','Every partner correction goes into a note, then into a card. Recurring errors are your real curriculum.','var(--accent)'],
+  ['Mind the free-tier traps','The Anki iOS app is paid (use AnkiWeb). progress.lawlessfrench.com caps at 10 kwizzes per month (use www). Coffee Break course packs are paid; the podcast is not.','var(--accent)']
 ];
 var CEFR = [
-  {lvl:'A1',hours:100,label:'Survival basics',color:'#3D7BFF'},
-  {lvl:'A2',hours:200,label:'Simple conversation',color:'#12C2D6'},
-  {lvl:'B1',hours:400,label:'Independent user',color:'#3FD07A'},
-  {lvl:'B2',hours:600,label:'Work and study level',color:'#FFB020'},
-  {lvl:'C1',hours:800,label:'Advanced',color:'#FF4FA3'}
+  {lvl:'A1',hours:100,label:'Survival basics',color:'var(--accent)'},
+  {lvl:'A2',hours:200,label:'Simple conversation',color:'var(--accent)'},
+  {lvl:'B1',hours:400,label:'Independent user',color:'var(--accent)'},
+  {lvl:'B2',hours:600,label:'Work and study level',color:'var(--accent)'},
+  {lvl:'C1',hours:800,label:'Advanced',color:'var(--accent)'}
 ];
 var PROMPTS = {
   p1:['Décris ta chambre à voix haute : cinq objets, cinq couleurs.','Présente-toi : nom, ville, travail, une chose que tu aimes.','Dis ce que tu fais aujourd\'hui, du matin au soir.','Épelle trois mots français à voix haute, lettre par lettre.','Décris ta famille en six phrases simples.'],
