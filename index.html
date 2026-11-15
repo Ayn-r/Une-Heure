@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="nuit">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Une Heure — French Focus Studio</title>
+<meta name="description" content="A free-resource French curriculum with a focus timer, progress tracking and spaced repetition. One hour a day.">
+<meta name="theme-color" content="#070A1C">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="bg-layers" aria-hidden="true"><div class="aurora a1"></div><div class="aurora a2"></div><div class="aurora a3"></div><div class="grain"></div><div class="vignette"></div></div>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#/dashboard" aria-label="Une Heure, home">
+    <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" class="bm-ring"/><path d="M20 20V9" class="bm-h"/><path d="M20 20l7.5 5" class="bm-m"/><circle cx="20" cy="20" r="2.2" class="bm-dot"/></svg></span>
+    <span class="brand-txt"><b>Une&nbsp;Heure</b><i>French focus studio</i></span>
+  </a>
+  <nav class="tabs" id="tabs" aria-label="Sections">
+    <a href="#/dashboard" data-route="dashboard"><span class="ti">&#9672;</span>Today</a>
+    <a href="#/plan" data-route="plan"><span class="ti">&#9636;</span>Plan</a>
+    <a href="#/focus" data-route="focus"><span class="ti">&#9673;</span>Focus</a>
+    <a href="#/cards" data-route="cards"><span class="ti">&#10697;</span>Cards</a>
+    <a href="#/library" data-route="library"><span class="ti">&#10022;</span>Library</a>
+    <a href="#/progress" data-route="progress"><span class="ti">&#9684;</span>Progress</a>
+  </nav>
+  <div class="nav-right">
+    <button class="pill streak-pill" id="streakPill" title="Your current daily streak"><span class="flame" aria-hidden="true">&#10039;</span><b id="streakNum">0</b><span class="pill-sub">day streak</span></button>
+    <button class="icon-btn" id="soundBtn" aria-pressed="true" title="Sound on / off (S)"><span id="soundIcon">&#9834;</span><span class="sr-only">Toggle sound</span></button>
+    <button class="icon-btn" id="settingsBtn" title="Settings and data">&#9881;<span class="sr-only">Settings</span></button>
+    <button class="btn btn-primary nav-cta" id="navStart">Start today<span class="kbd">F</span></button>
+  </div>
+</header>
+
+<main id="main" tabindex="-1" data-route="dashboard"></main>
+
+<footer class="foot"><div class="foot-in">
+  <p><b>Une Heure</b> &mdash; one focused hour a day, every resource free. Your data lives only in this browser.</p>
+  <p class="foot-links"><button class="linkish" data-open-settings="data">Export / import</button>&middot;<button class="linkish" data-open-settings="about">About the method</button>&middot;<span id="storageState">saved locally</span></p>
+</div></footer>
+
+<div class="scrim" id="completeScrim" hidden></div>
+<section class="modal" id="completeModal" role="dialog" aria-modal="true" aria-labelledby="cmTitle" hidden>
+  <button class="modal-x" data-close-modal="completeModal" aria-label="Close">&#10005;</button>
+  <div class="cm-badge" aria-hidden="true">&#10003;</div>
+  <h2 id="cmTitle">Hour complete</h2>
+  <p class="modal-sub" id="cmSub">Nice work. Here is what you just banked.</p>
+  <div class="cm-stats" id="cmStats"></div>
+  <label class="field"><span>Session note <i>(optional)</i></span><textarea id="cmNote" rows="2" placeholder="What clicked? What still feels shaky?"></textarea></label>
+  <div><span class="field-label">Quick-add cards from today <i>(one per line: front | back)</i></span>
+  <textarea id="cmCards" rows="3" placeholder="je voudrais | I would like&#10;ou est la gare ? | where is the station?"></textarea></div>
+  <div class="modal-actions"><button class="btn btn-ghost" data-close-modal="completeModal">Close</button><button class="btn btn-primary" id="cmSave">Save session</button></div>
+</section>
+
+<div class="scrim" id="drawerScrim" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dwTitle" hidden>
+  <header class="drawer-head"><h2 id="dwTitle">Settings</h2><button class="modal-x" id="drawerClose" aria-label="Close settings">&#10005;</button></header>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<div class="scrim" id="cardScrim" hidden></div>
+<section class="modal modal-sm" id="cardModal" role="dialog" aria-modal="true" aria-labelledby="ceTitle" hidden>
+  <button class="modal-x" data-close-modal="cardModal" aria-label="Close">&#10005;</button>
+  <h2 id="ceTitle">New card</h2>
+  <label class="field"><span>Front &mdash; French</span><input id="ceFront" type="text" placeholder="j'ai hate de..." autocomplete="off"></label>
+  <label class="field"><span>Back &mdash; meaning</span><input id="ceBack" type="text" placeholder="I can't wait to..." autocomplete="off"></label>
+  <div class="field-row">
+    <label class="field"><span>Deck</span><select id="ceDeck"></select></label>
+    <label class="field"><span>Tags</span><input id="ceTags" type="text" placeholder="verbs, A2" autocomplete="off"></label>
+  </div>
+  <div class="modal-actions"><button class="btn btn-danger-ghost" id="ceDelete" hidden>Delete</button><span class="spacer"></span><button class="btn btn-ghost" data-close-modal="cardModal">Cancel</button><button class="btn btn-primary" id="ceSave">Save card</button></div>
+</section>
+
+<div class="scrim" id="confirmScrim" hidden></div>
+<section class="modal modal-xs" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="cfTitle" hidden>
+  <h2 id="cfTitle">Are you sure?</h2><p class="modal-sub" id="cfBody"></p>
+  <div class="modal-actions"><button class="btn btn-ghost" data-close-modal="confirmModal">Cancel</button><button class="btn btn-danger" id="cfOk">Confirm</button></div>
+</section>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="timer-dock" id="timerDock" hidden></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
