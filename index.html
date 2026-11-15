@@ -50,7 +50,7 @@
   <div class="cm-stats" id="cmStats"></div>
   <label class="field"><span>Session note <i>(optional)</i></span><textarea id="cmNote" rows="2" placeholder="What clicked? What still feels shaky?"></textarea></label>
   <div><span class="field-label">Quick-add cards from today <i>(one per line: front | back)</i></span>
-  <textarea id="cmCards" rows="3" placeholder="je voudrais | I would like&#10;ou est la gare ? | where is the station?"></textarea></div>
+  <textarea id="cmCards" rows="3" aria-label="Quick-add cards, one per line" placeholder="je voudrais | I would like&#10;où est la gare ? | where is the station?"></textarea></div>
   <div class="modal-actions"><button class="btn btn-ghost" data-close-modal="completeModal">Close</button><button class="btn btn-primary" id="cmSave">Save session</button></div>
 </section>
 
@@ -64,8 +64,8 @@
 <section class="modal modal-sm" id="cardModal" role="dialog" aria-modal="true" aria-labelledby="ceTitle" hidden>
   <button class="modal-x" data-close-modal="cardModal" aria-label="Close">&#10005;</button>
   <h2 id="ceTitle">New card</h2>
-  <label class="field"><span>Front &mdash; French</span><input id="ceFront" type="text" placeholder="j'ai hate de..." autocomplete="off"></label>
-  <label class="field"><span>Back &mdash; meaning</span><input id="ceBack" type="text" placeholder="I can't wait to..." autocomplete="off"></label>
+  <label class="field"><span>Front &mdash; French</span><input id="ceFront" type="text" lang="fr" placeholder="j'ai hâte de…" autocomplete="off"></label>
+  <label class="field"><span>Back &mdash; meaning</span><input id="ceBack" type="text" placeholder="I can't wait to…" autocomplete="off"></label>
   <div class="field-row">
     <label class="field"><span>Deck</span><select id="ceDeck"></select></label>
     <label class="field"><span>Tags</span><input id="ceTags" type="text" placeholder="verbs, A2" autocomplete="off"></label>

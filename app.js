@@ -15,6 +15,10 @@ function dayDiff(a,b){return Math.round((parseKey(b)-parseKey(a))/86400000);}
 function fmtClock(s){s=Math.max(0,Math.round(s));return pad(Math.floor(s/60))+':'+pad(s%60);}
 function fmtHours(m){return (m/60).toFixed(m%60===0?0:1);}
 function niceDate(k){return parseKey(k).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});}
+/* the views live in a second closure, so reach them through window */
+function renderTimerUI(){if(window.UH_renderTimerUI)window.UH_renderTimerUI();}
+function renderTodayBlocks(){if(window.UH_renderTodayBlocks)window.UH_renderTodayBlocks();}
+function render(){if(window.UH_render)window.UH_render();}
 
 function defaults(){
   var cards=D.SEED_CARDS.map(function(c,i){return {id:'seed'+i,front:c[0],back:c[1],deck:c[2],tags:[c[3]],ease:2.5,ivl:0,reps:0,lapses:0,due:todayKey(),created:todayKey(),last:null};});
@@ -24,16 +28,29 @@ function defaults(){
     sessions:[],days:{},weekTasks:{},cards:cards,reviews:[],starred:['lt','tv5','rfi'],errors:[],checkpoints:{},milestones:{},
     ui:{route:'dashboard',planWeek:null,libCat:'all',libQuery:'',cardDeck:'all',cardQuery:'',cardSort:'due'}};
 }
+function normalize(p){
+  var d=defaults(),o=Object.assign({},d,p);
+  o.settings=Object.assign({},d.settings,(p.settings&&typeof p.settings==='object')?p.settings:{});
+  o.settings.blockMins=Object.assign({},d.settings.blockMins,(p.settings&&p.settings.blockMins&&typeof p.settings.blockMins==='object')?p.settings.blockMins:{});
+  Object.keys(o.settings.blockMins).forEach(function(k){var n=+o.settings.blockMins[k];o.settings.blockMins[k]=(isFinite(n)&&n>0)?Math.min(n,90):(d.settings.blockMins[k]||5);});
+  o.ui=Object.assign({},d.ui,(p.ui&&typeof p.ui==='object')?p.ui:{});
+  ['sessions','cards','reviews','starred','errors'].forEach(function(k){if(!Array.isArray(o[k]))o[k]=d[k];});
+  ['days','weekTasks','checkpoints','milestones'].forEach(function(k){if(!o[k]||typeof o[k]!=='object'||Array.isArray(o[k]))o[k]={};});
+  o.cards=o.cards.filter(function(c){return c&&typeof c==='object'&&c.front!=null&&c.back!=null;});
+  o.sessions=o.sessions.filter(function(s){return s&&typeof s==='object'&&typeof s.date==='string';});
+  o.reviews=o.reviews.filter(function(r){return r&&typeof r.date==='string'&&isFinite(+r.count);});
+  if(typeof o.startDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(o.startDate))o.startDate=todayKey();
+  return o;
+}
 function load(){
-  try{var raw=localStorage.getItem(KEY);if(!raw)return defaults();
-    var p=JSON.parse(raw),d=defaults(),o=Object.assign(d,p);
-    o.settings=Object.assign(d.settings,p.settings||{});
-    o.settings.blockMins=Object.assign(d.settings.blockMins,(p.settings&&p.settings.blockMins)||{});
-    o.ui=Object.assign(d.ui,p.ui||{});
-    ['sessions','cards','reviews','starred','errors'].forEach(function(k){if(!Array.isArray(o[k]))o[k]=d[k];});
-    ['days','weekTasks','checkpoints','milestones'].forEach(function(k){if(!o[k]||typeof o[k]!=='object')o[k]={};});
-    return o;
-  }catch(e){return defaults();}
+  var raw=null;
+  try{raw=localStorage.getItem(KEY);if(!raw)return defaults();
+    var p=JSON.parse(raw);if(!p||typeof p!=='object'||Array.isArray(p))throw new Error('bad state');
+    return normalize(p);
+  }catch(e){
+    try{if(raw)localStorage.setItem(KEY+'.bak',raw);}catch(e2){}
+    return defaults();
+  }
 }
 var S=load(), saveT=null;
 function save(){clearTimeout(saveT);saveT=setTimeout(function(){
@@ -63,7 +80,7 @@ function stats(){var st=streaks(),m=totalMinutes();return{sessions:S.sessions.le
 function cefrPosition(h){
   var last={lvl:'A0',hours:0,color:'#7B87B4',label:'Starting out'},next=null;
   for(var i=0;i<D.CEFR.length;i++){if(h<D.CEFR[i].hours){next=D.CEFR[i];if(i>0)last=D.CEFR[i-1];break;}}
-  if(!next){next=D.CEFR[D.CEFR.length-1];last=D.CEFR[D.CEFR.length-2];}
+  if(!next){var top=D.CEFR[D.CEFR.length-1];return{from:top,to:top,pct:1,hoursToNext:0};}
   return{from:last,to:next,pct:clamp((h-last.hours)/(next.hours-last.hours),0,1),hoursToNext:Math.max(0,next.hours-h)};
 }
 
@@ -105,8 +122,8 @@ function toast(msg,kind,action){
 var stack=[];
 function scrimFor(id){return id==='drawer'?$('#drawerScrim'):$('#'+id.replace('Modal','Scrim'));}
 function openModal(id){var m=$('#'+id),sc=scrimFor(id);if(!m)return;m.hidden=false;if(sc)sc.hidden=false;
-  document.body.classList.add('locked');stack.push(id);
-  var f=m.querySelector('input,textarea,select,button:not(.modal-x)');if(f)setTimeout(function(){try{f.focus();}catch(e){}},60);}
+  document.body.classList.add('locked');if(stack.indexOf(id)<0)stack.push(id);
+  var f=id==='drawer'?m.querySelector('#drawerClose'):m.querySelector('input,textarea,select,button:not(.modal-x)');if(f)setTimeout(function(){try{f.focus();}catch(e){}},60);}
 function closeModal(id){var m=$('#'+id),sc=scrimFor(id);if(m)m.hidden=true;if(sc)sc.hidden=true;
   stack=stack.filter(function(x){return x!==id;});if(!stack.length)document.body.classList.remove('locked');}
 function confirmDialog(title,body,onOk,label){
@@ -138,16 +155,17 @@ var T={running:false,idx:0,left:600,total:600,mode:'session',breakLeft:0,breaksT
 function blockList(){return D.BLOCKS.map(function(b){return Object.assign({},b,{min:S.settings.blockMins[b.id]||b.min});});}
 function sessionTotal(){return blockList().reduce(function(a,b){return a+b.min;},0);}
 function curBlock(){return blockList()[clamp(T.idx,0,4)];}
-function stopLoop(){if(T.raf){cancelAnimationFrame(T.raf);T.raf=null;}}
+function stopLoop(){if(T.raf){clearInterval(T.raf);T.raf=null;}}
 function resetTimer(keep){T.running=false;stopLoop();if(!keep)T.idx=0;T.mode='session';T.total=curBlock().min*60;T.left=T.total;T.elapsedTotal=0;T.breaksTaken=0;setAmbient(false);renderTimerUI();}
 function startLoop(){T.lastTick=performance.now();stopLoop();
-  (function step(now){if(!T.running){T.raf=null;return;}
-    var dt=(now-T.lastTick)/1000;T.lastTick=now;
+  T.raf=setInterval(function(){
+    if(!T.running){stopLoop();return;}
+    var now=performance.now(),dt=(now-T.lastTick)/1000;T.lastTick=now;
     if(T.mode==='break'){T.breakLeft-=dt;if(T.breakLeft<=0)endBreak();}
     else{var prev=T.left;T.left-=dt;T.elapsedTotal+=dt;
       if(S.settings.tick&&Math.floor(T.left)!==Math.floor(prev)&&T.left<=10&&T.left>0)tone(880,.03,'square',.05);
       if(T.left<=0){blockFinished(false);}}
-    renderTimerUI();if(T.running)T.raf=requestAnimationFrame(step);else T.raf=null;})(performance.now());}
+    renderTimerUI();if(!T.running)stopLoop();},250);}
 function timerStart(){if(T.mode==='session'&&T.left<=0)T.left=T.total;T.running=true;play('start');startLoop();renderTimerUI();if(S.settings.ambient)setAmbient(true);}
 function timerPause(){T.running=false;stopLoop();play('pause');setAmbient(false);renderTimerUI();}
 function timerToggle(){T.running?timerPause():timerStart();}
@@ -205,10 +223,10 @@ function nextIvl(card,g){
   return clamp(ivl,1,3650);
 }
 function gradeCard(card,g){
-  var e=card.ease||2.5;
+  var e=card.ease||2.5,ivl=nextIvl(card,g);
   if(g===0){card.lapses=(card.lapses||0)+1;card.reps=0;e=Math.max(1.3,e-.2);}
   else{card.reps=(card.reps||0)+1;e=clamp(e+(g===1?-.15:(g===3?.15:0)),1.3,3);}
-  card.ease=e;card.ivl=nextIvl(card,g);card.last=todayKey();card.due=todayKey(addDays(new Date(),card.ivl));
+  card.ease=e;card.ivl=ivl;card.last=todayKey();card.due=todayKey(addDays(new Date(),card.ivl));
   var t=todayKey(),r=S.reviews.filter(function(x){return x.date===t;})[0];
   if(r)r.count++;else S.reviews.push({date:t,count:1});
   save();
@@ -217,7 +235,7 @@ function ivlLabel(d){if(d<1)return 'now';if(d===1)return '1d';if(d<30)return d+'
 
 window.UH={D:D,S:S,$:$,$$:$$,esc:esc,uid:uid,clamp:clamp,pad:pad,todayKey:todayKey,parseKey:parseKey,addDays:addDays,dayDiff:dayDiff,
   fmtClock:fmtClock,fmtHours:fmtHours,niceDate:niceDate,save:save,defaults:defaults,
-  replaceState:function(n){S=n;window.UH.S=n;},
+  replaceState:function(n){S=n;window.UH.S=n;},normalize:normalize,topModal:function(){return stack[stack.length-1];},
   totalMinutes:totalMinutes,sessionDates:sessionDates,streaks:streaks,currentWeek:currentWeek,weekData:weekData,phaseOf:phaseOf,
   weekProgress:weekProgress,anyWeeksDone:anyWeeksDone,today:today,dueCards:dueCards,stats:stats,cefrPosition:cefrPosition,
   checkMilestones:checkMilestones,toast:toast,play:play,tone:tone,setAmbient:setAmbient,confetti:confetti,
@@ -236,6 +254,12 @@ window.UH={D:D,S:S,$:$,$$:$$,esc:esc,uid:uid,clamp:clamp,pad:pad,todayKey:todayK
 var U=window.UH,D=U.D,$=U.$,$$=U.$$,esc=U.esc,clamp=U.clamp;
 function S(){return U.S;}
 var srs={queue:[],pos:0,shown:false,done:0};
+function gradeCurrent(g){
+  var c=srs.queue[srs.pos];if(!c)return;
+  U.gradeCard(c,g);U.play(g===0?'again':'good');srs.done++;
+  if(g===0)srs.queue.push(c);
+  srs.pos++;srs.shown=false;U.checkMilestones();render();
+}
 
 function ringSVG(pct,size,id){var r=size/2-9,c=2*Math.PI*r;
   return '<svg viewBox="0 0 '+size+' '+size+'" aria-hidden="true"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="var(--c-blue)"/><stop offset="55%" stop-color="var(--c-cyan)"/><stop offset="100%" stop-color="var(--c-magenta)"/></linearGradient></defs><circle class="trk" cx="'+size/2+'" cy="'+size/2+'" r="'+r+'"/><circle class="val" cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" stroke="url(#'+id+')" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+(c*(1-clamp(pct,0,1))).toFixed(1)+'"/></svg>';}
@@ -259,13 +283,13 @@ function viewDashboard(){
   var mins=U.totalMinutes(),pos=U.cefrPosition(mins/60),goal=S().settings.dailyGoal||60;
   var tm=U.sessionDates()[U.todayKey()]||0,wp=U.weekProgress(w),due=U.dueCards().length;
   var dc=D.BLOCKS.filter(function(b){return td.blocks[b.id];}).length;
-  var h=new Date().getHours(),greet=h<5?'Bonne nuit':h<12?'Bonjour':h<18?'Bon apres-midi':'Bonsoir';
+  var h=new Date().getHours(),greet=(h>=5&&h<18)?'Bonjour':'Bonsoir';
   var nm=S().settings.name?', '+esc(S().settings.name):'';
   var o='<div class="view stack">';
   o+='<section class="hero"><div class="hero-in"><div><div class="eyebrow">'+greet+nm+' · '+esc(new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'}))+'</div><h1>Week '+w+' — <em>'+esc(ph.name)+'</em></h1><p class="lede">'+esc(ph.goal)+'</p><div class="hero-meta"><span class="chip accent">'+esc(ph.cefr)+'</span><span class="chip">This week: <b>'+esc(wd.title)+'</b></span><span class="chip"><b>'+wp.done+'/'+wp.total+'</b> tasks</span><span class="chip"><b>'+due+'</b> cards due</span></div><div class="hero-actions"><button class="btn btn-primary" data-act="go-focus">Start the hour<span class="kbd">F</span></button><button class="btn btn-ghost" data-act="go-cards">Review '+due+' card'+(due===1?'':'s')+'</button><button class="btn btn-ghost" data-act="go-plan">See week '+w+'</button></div></div><div class="ring-wrap"><div class="ring">'+ringSVG(tm/goal,220,'gToday')+'<div class="ring-c"><div class="big">'+tm+'</div><div class="lbl">of '+goal+' min today</div><div class="sm">'+(tm>=goal?'Goal reached. Bravo.':(goal-tm)+' minutes to go')+'</div></div></div><div class="tiny dim">'+dc+' of 5 blocks ticked</div></div></div></section>';
-  o+='<section class="stats">'+tile('Total focus',U.fmtHours(mins)+'<small>h</small>',st.sessions+' sessions logged','#3D7BFF')+tile('Current streak',st.curStreak+'<small>d</small>','best '+st.bestStreak+' days','#FFB020')+tile('Plan progress',Math.round(st.weeksDone/80*100)+'<small>%</small>',st.weeksDone+' of 80 weeks','#3FD07A')+tile('Cards live',S().cards.length,due+' due today','#A78BFA')+tile('Est. level',pos.to.lvl,Math.ceil(pos.hoursToNext)+'h to '+pos.to.lvl,'#FF4FA3')+'</section>';
+  o+='<section class="stats">'+tile('Total focus',U.fmtHours(mins)+'<small>h</small>',st.sessions+' sessions logged','#3D7BFF')+tile('Current streak',st.curStreak+'<small>d</small>','best '+st.bestStreak+' days','#FFB020')+tile('Plan progress',Math.round(st.weeksDone/80*100)+'<small>%</small>',st.weeksDone+' of 80 weeks','#3FD07A')+tile('Cards live',S().cards.length,due+' due today','#A78BFA')+tile('Est. level',pos.from.lvl,pos.hoursToNext>0?Math.ceil(pos.hoursToNext)+'h to '+pos.to.lvl:'top of the scale','#FF4FA3')+'</section>';
   o+='<div class="split"><section class="card"><div class="card-h"><h3>Today\'s five blocks</h3><span class="sub">'+U.sessionTotal()+' min template</span></div><div class="blocks" id="todayBlocks">'+todayBlocksHTML()+'</div><div class="note" style="margin-top:14px"><b>Rule one:</b> never skip the cards. On a terrible day, do only the ten minutes of reviews. Streak preservation beats intensity.</div></section><div class="stack">';
-  o+='<section class="card tight"><div class="card-h"><h3>Today\'s speaking prompt</h3><span class="sub">say it out loud</span></div><p class="quote" id="promptText">&laquo; '+esc(promptFor(ph.id))+' &raquo;</p><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" data-act="new-prompt">Another prompt</button><button class="btn btn-sm btn-primary" data-act="prompt-focus">Time 10 minutes</button></div></section>';
+  o+='<section class="card tight"><div class="card-h"><h3>Today\'s speaking prompt</h3><span class="sub">say it out loud</span></div><p class="quote" id="promptText" lang="fr">&laquo;&nbsp;'+esc(promptFor(ph.id))+'&nbsp;&raquo;</p><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" data-act="new-prompt">Another prompt</button><button class="btn btn-sm btn-primary" data-act="prompt-focus">Time 10 minutes</button></div></section>';
   o+='<section class="card tight"><div class="card-h"><h3>This week\'s tasks</h3><span class="sub">'+wp.done+'/'+wp.total+'</span></div><div class="tasks">'+wd.tasks.slice(0,4).map(function(t,i){return taskHTML(w,i,t);}).join('')+'</div>'+(wd.tasks.length>4?'<button class="btn btn-sm btn-ghost" style="margin-top:10px;width:100%" data-act="go-plan">All '+wd.tasks.length+' tasks &rarr;</button>':'')+'</section></div></div>';
   o+='<section class="card"><div class="card-h"><h3>The five phases</h3><span class="sub">click a phase to open its weeks</span></div><div class="rail">'+D.PHASES.map(function(p){
     var tot=p.weeks[1]-p.weeks[0]+1,dn=0;for(var i=p.weeks[0];i<=p.weeks[1];i++){var q=U.weekProgress(i);if(q.total&&q.done===q.total)dn++;}
@@ -281,7 +305,7 @@ function viewPlan(){
   var o='<div class="view stack"><section class="card"><div class="card-h"><h3>80-week map</h3><span class="sub">You are in week '+cw+' · started '+esc(U.niceDate(S().startDate))+'</span></div><div class="weekgrid">'+D.WEEKS.map(function(x){
     var p=U.weekProgress(x.w),pp=U.phaseOf(x.w),cls=p.total&&p.done===p.total?' full':(p.done>0?' part':'');
     return '<button class="wk'+cls+(x.w===cw?' cur':'')+(x.w===sel?' sel':'')+'" style="--wc:'+pp.accent+'" data-week="'+x.w+'" title="Week '+x.w+' · '+esc(x.title)+'">'+(x.checkpoint?'<span class="cp">\u2605</span>':'')+x.w+'<span class="wd"></span></button>';}).join('')+'</div><div class="legend">'+D.PHASES.map(function(p){return '<span class="lg"><i style="background:'+p.accent+'"></i>P'+p.n+' '+esc(p.name)+'</span>';}).join('')+'<span class="lg"><i style="background:var(--c-amber)"></i>\u2605 checkpoint</span></div></section>';
-  o+='<div class="split"><section class="card" style="border-color:'+ph.accent+'55"><div class="card-h"><h3>Week '+sel+' · '+esc(wd.title)+'</h3><span class="sub">'+esc(ph.cefr)+'</span></div><p class="muted tiny" style="margin-bottom:12px">'+esc(wd.detail)+'</p><div class="bar-lbl"><span>Task completion</span><b>'+wp.done+'/'+wp.total+'</b></div>'+bar(wp.pct,ph.accent)+'<div class="tasks" style="margin-top:14px">'+wd.tasks.map(function(t,i){return taskHTML(sel,i,t);}).join('')+'</div>'+(wd.checkpoint?'<div class="note" style="margin-top:14px"><b>Checkpoint week.</b> '+esc(wd.checkpoint)+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" data-week-nav="-1"'+(sel<=1?' disabled':'')+'&larr; Previous</button><button class="btn btn-sm btn-ghost" data-week-nav="1"'+(sel>=80?' disabled':'')+'>Next &rarr;</button><button class="btn btn-sm btn-ghost" data-act="week-current">Jump to current</button><span class="spacer"></span><button class="btn btn-sm btn-primary" data-act="week-all">Tick all tasks</button></div></section>';
+  o+='<div class="split"><section class="card" style="border-color:'+ph.accent+'55"><div class="card-h"><h3>Week '+sel+' · '+esc(wd.title)+'</h3><span class="sub">'+esc(ph.cefr)+'</span></div><p class="muted tiny" style="margin-bottom:12px">'+esc(wd.detail)+'</p><div class="bar-lbl"><span>Task completion</span><b>'+wp.done+'/'+wp.total+'</b></div>'+bar(wp.pct,ph.accent)+'<div class="tasks" style="margin-top:14px">'+wd.tasks.map(function(t,i){return taskHTML(sel,i,t);}).join('')+'</div>'+(wd.checkpoint?'<div class="note" style="margin-top:14px"><b>Checkpoint week.</b> '+esc(wd.checkpoint)+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" data-week-nav="-1"'+(sel<=1?' disabled':'')+'>&larr; Previous</button><button class="btn btn-sm btn-ghost" data-week-nav="1"'+(sel>=80?' disabled':'')+'>Next &rarr;</button><button class="btn btn-sm btn-ghost" data-act="week-current">Jump to current</button><span class="spacer"></span><button class="btn btn-sm btn-primary" data-act="week-all">Tick all tasks</button></div></section>';
   o+='<div class="stack"><section class="card"><div class="card-h"><h3>Phase '+ph.n+' playbook</h3><span class="sub">'+esc(ph.name)+'</span></div><p class="muted tiny" style="margin-bottom:14px">'+esc(ph.goal)+'</p><div class="blocks">'+U.blockList().map(function(b){return '<div class="blk" style="--bc:'+b.color+'"><div class="blk-ic">'+b.icon+'</div><div><div class="blk-t">'+esc(b.name)+'<span class="mins">'+b.min+' min</span></div><div class="blk-d">'+esc(ph.blocks[b.id])+'</div></div><div></div></div>';}).join('')+'</div><div class="note" style="margin-top:14px"><b>Focus note.</b> '+esc(ph.focusNote)+'</div></section>';
   if(wd.checkpoint){var cp=S().checkpoints[sel];
     o+='<section class="card"><div class="card-h"><h3>Checkpoint result</h3><span class="sub">week '+sel+'</span></div><label class="field"><span>Outcome / score</span><input type="text" id="cpResult" value="'+esc(cp?cp.result:'')+'" placeholder="e.g. A2 listening 18/25, reading 20/25"></label><label class="field"><span>What to fix next</span><textarea id="cpNote" rows="2" placeholder="Numbers above 20 still slow. Past-tense agreement.">'+esc(cp?cp.note:'')+'</textarea></label><button class="btn btn-sm btn-primary" data-cp-save="'+sel+'">Save checkpoint</button>'+(cp?'<span class="tiny dim" style="margin-left:10px">saved '+esc(U.niceDate(cp.date))+'</span>':'')+'</section>';}
@@ -318,15 +342,26 @@ function buildTicks(){
 }
 window.UH_renderTimerUI=function(){
   var T=U.T,b=U.curBlock(),ph=U.phaseOf(U.currentWeek());
+  var left=T.mode==='break'?T.breakLeft:T.left;
   var dock=$('#timerDock');
   if(dock){
     var show=T.running||T.elapsedTotal>0;
     dock.hidden=!show||$('#main').dataset.route==='focus';
-    if(!dock.hidden)dock.innerHTML='<div><div class="dt">'+U.fmtClock(T.mode==='break'?T.breakLeft:T.left)+'</div><div class="dl">'+esc(T.mode==='break'?'break':b.short)+'</div></div><button class="dock-btn" data-act="t-toggle" aria-label="Play or pause">'+(T.running?'\u275A\u275A':'\u25B6')+'</button><button class="dock-btn" data-act="go-focus" aria-label="Open focus">\u2197</button>';
+    if(!dock.hidden){
+      var dsig=T.running?'1':'0';
+      if(dock.dataset.sig!==dsig||!dock.firstChild){
+        dock.dataset.sig=dsig;
+        dock.innerHTML='<div><div class="dt"></div><div class="dl"></div></div><button class="dock-btn" data-act="t-toggle" aria-label="Play or pause">'+(T.running?'\u275A\u275A':'\u25B6')+'</button><button class="dock-btn" data-act="open-focus" aria-label="Open focus">\u2197</button>';
+      }
+      var dt=dock.querySelector('.dt'),dl=dock.querySelector('.dl');
+      if(dt)dt.textContent=U.fmtClock(left);
+      if(dl)dl.textContent=T.mode==='break'?'break':b.short;
+    }
   }
+  document.title=(T.running?U.fmtClock(left)+' \u00B7 ':'')+'Une Heure \u2014 French Focus Studio';
   var card=$('#timerCard');if(!card)return;
   card.style.setProperty('--tc',T.mode==='break'?'#A78BFA':b.color);
-  var left=T.mode==='break'?T.breakLeft:T.left,tot=T.mode==='break'?Math.max(1,(T.breaksTaken%3===0?S().settings.longBreakMin:S().settings.breakMin)*60):T.total;
+  var tot=T.mode==='break'?Math.max(1,(T.breaksTaken%3===0?S().settings.longBreakMin:S().settings.breakMin)*60):Math.max(1,T.total);
   var cl=$('#clock');if(cl)cl.textContent=U.fmtClock(left);
   var sub=$('#clockSub');if(sub)sub.textContent=T.mode==='break'?(T.running?'break running':'break paused'):(T.running?'focusing':(left<T.total?'paused':'ready'));
   var dv=$('#dialVal');if(dv)dv.setAttribute('stroke-dashoffset',(540.4*(1-clamp(left/tot,0,1))).toFixed(1));
@@ -334,11 +369,18 @@ window.UH_renderTimerUI=function(){
   var tip=$('#blockTip');if(tip)tip.textContent=T.mode==='break'?'Stand up. Look far away. Say one French sentence out loud before you sit back down.':(ph.blocks[b.id]||b.tip);
   var pb=$('#playBtn');if(pb)pb.innerHTML=T.running?'\u275A\u275A':'\u25B6';
   var seq=$('#seq');
-  if(seq)seq.innerHTML=U.blockList().map(function(x,i){
-    var done=!!U.today().blocks[x.id],pct=i===U.T.idx&&T.mode==='session'?1-(T.left/Math.max(1,T.total)):(done?1:0);
-    return '<button class="seq-i'+(i===U.T.idx?' on':'')+(done?' done':'')+'" style="--sqc:'+x.color+'" data-jump="'+i+'">'+esc(x.short)+'<div class="sq-b"><i style="width:'+(pct*100).toFixed(0)+'%"></i></div></button>';}).join('');
+  if(seq){
+    var bl=U.blockList(),tdb=U.today().blocks;
+    var ssig=T.idx+'|'+T.mode+'|'+bl.map(function(x){return (tdb[x.id]?1:0)+x.short;}).join(',');
+    if(seq.dataset.sig!==ssig||!seq.firstChild){
+      seq.dataset.sig=ssig;
+      seq.innerHTML=bl.map(function(x,i){
+        var done=!!tdb[x.id],pct=(i===T.idx&&T.mode==='session')?1-(T.left/Math.max(1,T.total)):(done?1:0);
+        return '<button class="seq-i'+(i===T.idx?' on':'')+(done?' done':'')+'" style="--sqc:'+x.color+'" data-jump="'+i+'">'+esc(x.short)+'<div class="sq-b"><i style="width:'+(clamp(pct,0,1)*100).toFixed(0)+'%"></i></div></button>';}).join('');
+    }
+    if(T.mode==='session'){var fill=$('.seq-i.on .sq-b i',seq);if(fill)fill.style.width=(clamp(1-(T.left/Math.max(1,T.total)),0,1)*100).toFixed(0)+'%';}
+  }
   var tl=$('#totalLbl');if(tl)tl.textContent=U.sessionTotal()+' min';
-  document.title=(T.running?U.fmtClock(left)+' · ':'')+'Une Heure — French Focus Studio';
 };
 
 /* ── cards ── */
@@ -372,7 +414,7 @@ function viewCards(){
     o+='<div class="empty"><div class="em">\u2726</div><h3>'+(srs.done?'Queue cleared':'Nothing due right now')+'</h3><p class="tiny">'+(srs.done?srs.done+' cards graded. Come back tomorrow — the intervals do the work.':'Every card is scheduled for a future day. Add new ones or study ahead.')+'</p><div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn btn-sm btn-primary" data-act="card-new">Add a card</button><button class="btn btn-sm btn-ghost" data-act="srs-ahead">Study ahead (20 cards)</button></div></div>';
   }else{
     var c=srs.queue[srs.pos];
-    o+='<div class="srs-stage"><div class="flash'+(srs.shown?' flip':'')+'" id="flash" role="button" tabindex="0" aria-label="Reveal answer"><div class="side">'+(srs.shown?'meaning':'french')+' · '+(srs.pos+1)+' / '+srs.queue.length+'</div><div class="front">'+esc(c.front)+'</div>'+(srs.shown?'<div class="back">'+esc(c.back)+'</div>':'<div class="tiny dim">click, or press Space, to reveal</div>')+'<div class="tags"><span class="tag">'+esc(c.deck||'Unsorted')+'</span>'+(c.tags||[]).map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('')+'</div></div>';
+    o+='<div class="srs-stage"><div class="flash'+(srs.shown?' flip':'')+'" id="flash" role="button" tabindex="0" aria-label="Reveal answer"><div class="side">'+(srs.shown?'meaning':'french')+' · '+(srs.pos+1)+' / '+srs.queue.length+'</div><div class="front" lang="fr">'+esc(c.front)+'</div>'+(srs.shown?'<div class="back">'+esc(c.back)+'</div>':'<div class="tiny dim">click, or press Space, to reveal</div>')+'<div class="tags"><span class="tag">'+esc(c.deck||'Unsorted')+'</span>'+(c.tags||[]).map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('')+'</div></div>';
     if(srs.shown){
       o+='<div class="grade-row">'+[[0,'Again','g1','1'],[1,'Hard','g2','2'],[2,'Good','g3','3'],[3,'Easy','g4','4']].map(function(g){
         return '<button class="grade '+g[2]+'" data-grade="'+g[0]+'">'+g[1]+'<small>'+U.ivlLabel(U.nextIvl(c,g[0]))+' · '+g[3]+'</small></button>';}).join('')+'</div>';
@@ -387,7 +429,7 @@ function viewCards(){
     o+='<div class="tbl-wrap"><table><thead><tr><th class="sortable" data-sort="front">French</th><th>Meaning</th><th class="sortable" data-sort="deck">Deck</th><th class="sortable" data-sort="due">Due</th><th class="sortable" data-sort="reps">Reps</th><th></th></tr></thead><tbody>'+list.slice(0,200).map(function(c){
       var overdue=!c.due||U.dayDiff(c.due,U.todayKey())>=0;
       var state=!c.reps?['new','#A78BFA']:(overdue?['due','#FFB020']:['learned','#3FD07A']);
-      return '<tr><td class="fr">'+esc(c.front)+'</td><td class="muted">'+esc(c.back)+'</td><td><span class="tag">'+esc(c.deck||'Unsorted')+'</span></td><td><span class="state-dot" style="color:'+state[1]+'"><i style="background:'+state[1]+'"></i>'+state[0]+'</span> <span class="tiny dim">'+esc(c.due||'')+'</span></td><td class="mono">'+(c.reps||0)+'</td><td style="white-space:nowrap"><button class="rowbtn" data-card-edit="'+c.id+'" title="Edit">\u270E</button><button class="rowbtn del" data-card-del="'+c.id+'" title="Delete">\u2715</button></td></tr>';}).join('')+'</tbody></table></div>';
+      return '<tr><td class="fr" lang="fr">'+esc(c.front)+'</td><td class="muted">'+esc(c.back)+'</td><td><span class="tag">'+esc(c.deck||'Unsorted')+'</span></td><td><span class="state-dot" style="color:'+state[1]+'"><i style="background:'+state[1]+'"></i>'+state[0]+'</span> <span class="tiny dim">'+esc(c.due||'')+'</span></td><td class="mono">'+(c.reps||0)+'</td><td style="white-space:nowrap"><button class="rowbtn" data-card-edit="'+c.id+'" title="Edit">\u270E</button><button class="rowbtn del" data-card-del="'+c.id+'" title="Delete">\u2715</button></td></tr>';}).join('')+'</tbody></table></div>';
     if(list.length>200)o+='<p class="tiny dim" style="margin-top:10px">Showing the first 200 of '+list.length+'. Narrow the search to see more.</p>';
   }
   o+='</section>';
@@ -500,7 +542,9 @@ var VIEWS={dashboard:viewDashboard,plan:viewPlan,focus:viewFocus,cards:viewCards
 function route(){var h=(location.hash||'#/dashboard').replace('#/','');return VIEWS[h]?h:'dashboard';}
 function render(){
   var r=route();S().ui.route=r;
-  var main=$('#main');main.dataset.route=r;main.innerHTML=VIEWS[r]();
+  var main=$('#main');main.dataset.route=r;
+  try{main.innerHTML=VIEWS[r]();}
+  catch(err){console.error(err);main.innerHTML='<div class="view"><section class="card"><div class="card-h"><h3>Something went wrong</h3></div><p class="muted">This section could not be drawn. Your data is untouched. Try another tab, or open Settings and export a backup before reloading.</p></section></div>';}
   $$('#tabs a').forEach(function(a){a.classList.toggle('on',a.dataset.route===r);});
   var st=U.streaks();$('#streakNum').textContent=st.cur;$('#streakPill').classList.toggle('hot',st.cur>=3);
   $('#soundBtn').setAttribute('aria-pressed',String(S().settings.sound));
@@ -561,11 +605,7 @@ function importJSON(file){
       var p=JSON.parse(fr.result);
       if(!p||!Array.isArray(p.cards)||!Array.isArray(p.sessions))throw new Error('bad shape');
       U.confirmDialog('Replace your data?','This overwrites everything currently in this browser with the imported backup.',function(){
-        var d=U.defaults(),o=Object.assign(d,p);
-        o.settings=Object.assign(d.settings,p.settings||{});
-        o.settings.blockMins=Object.assign(d.settings.blockMins,(p.settings&&p.settings.blockMins)||{});
-        o.ui=Object.assign(d.ui,p.ui||{});
-        U.replaceState(o);applyTheme();U.resetTimer(false);srs.queue=[];render();U.toast('Backup imported','ok');
+        U.replaceState(U.normalize(p));applyTheme();U.resetTimer(false);srs.queue=[];render();U.toast('Backup imported','ok');
       },'Replace');
     }catch(e){U.toast('That file is not a valid Une Heure backup.','danger');}
   };
@@ -580,6 +620,7 @@ document.addEventListener('click',function(ev){
   var d=t.dataset;
 
   if(t.id==='navStart'||d.act==='go-focus'){go('focus');setTimeout(function(){if(!U.T.running)U.timerStart();},120);return;}
+  if(d.act==='open-focus'){go('focus');return;}
   if(d.act==='go-cards'){go('cards');return;}
   if(d.act==='go-plan'){S().ui.planWeek=U.currentWeek();go('plan');return;}
   if(t.id==='streakPill'){go('progress');return;}
@@ -604,7 +645,7 @@ document.addEventListener('click',function(ev){
   if(d.blockTick){var td=U.today();td.blocks[d.blockTick]=!td.blocks[d.blockTick];U.save();U.play('toggle');window.UH_renderTodayBlocks();window.UH_renderTimerUI();
     if(D.BLOCKS.every(function(b){return U.today().blocks[b.id];}))U.toast('All five blocks ticked. Log the session from the Focus tab.','ok');return;}
   if(d.act==='preset-default'){S().settings.blockMins={anki:10,structure:20,input:15,output:10,log:5};U.save();U.resetTimer(true);render();U.toast('Back to the 60-minute template','ok');return;}
-  if(d.act==='preset-short'){S().settings.blockMins={anki:10,structure:10,input:5,output:5,log:0};U.save();U.resetTimer(true);render();U.toast('Short day: 30 minutes. Cards never skipped.','ok');return;}
+  if(d.act==='preset-short'){S().settings.blockMins={anki:10,structure:8,input:5,output:4,log:3};U.save();U.resetTimer(true);render();U.toast('Short day: 30 minutes. Cards never skipped.','ok');return;}
 
   if(d.task){var k='w'+d.task;S().weekTasks[k]=!S().weekTasks[k];U.save();U.play(S().weekTasks[k]?'good':'click');
     var parts=d.task.split(':'),wp=U.weekProgress(+parts[0]);
@@ -618,10 +659,7 @@ document.addEventListener('click',function(ev){
   if(d.cpSave){S().checkpoints[d.cpSave]={date:U.todayKey(),result:$('#cpResult').value.trim(),note:$('#cpNote').value.trim()};U.save();U.play('good');U.toast('Checkpoint saved','ok');render();return;}
 
   if(t.id==='flash'||(t.closest&&t.closest('#flash'))){srs.shown=!srs.shown;U.play('click');render();return;}
-  if(d.grade!==undefined){
-    var c=srs.queue[srs.pos];if(!c)return;
-    U.gradeCard(c,+d.grade);U.play(+d.grade===0?'again':'good');srs.done++;srs.pos++;srs.shown=false;
-    U.checkMilestones();render();return;}
+  if(d.grade!==undefined){gradeCurrent(+d.grade);return;}
   if(d.act==='srs-skip'){srs.pos++;srs.shown=false;render();return;}
   if(d.act==='srs-restart'){buildQueue();U.toast('Queue rebuilt','info');render();return;}
   if(d.act==='srs-ahead'){srs.queue=S().cards.slice().sort(function(a,b){return String(a.due).localeCompare(String(b.due));}).slice(0,20);srs.pos=0;srs.shown=false;srs.done=0;render();return;}
@@ -674,7 +712,7 @@ document.addEventListener('click',function(ev){
   if(d.act==='new-prompt'){
     var arr=D.PROMPTS[U.phaseOf(U.currentWeek()).id],el=$('#promptText');
     if(el){var cur=el.textContent,next=cur;
-      for(var i=0;i<8&&next===cur;i++)next='\u00AB '+arr[Math.floor(Math.random()*arr.length)]+' \u00BB';
+      for(var i=0;i<8&&next===cur;i++)next='\u00AB\u00A0'+arr[Math.floor(Math.random()*arr.length)]+'\u00A0\u00BB';
       el.textContent=next;U.play('click');}
     return;}
   if(d.act==='prompt-focus'){go('focus');setTimeout(function(){U.jumpTo(3);U.timerStart();},120);return;}
@@ -711,16 +749,22 @@ document.addEventListener('change',function(ev){
 });
 document.addEventListener('keydown',function(ev){
   var tag=(ev.target.tagName||'').toLowerCase();
-  if(tag==='input'||tag==='textarea'||tag==='select'){if(ev.key==='Escape')ev.target.blur();return;}
-  if(ev.key==='Escape'){['completeModal','cardModal','confirmModal','drawer'].forEach(U.closeModal);return;}
+  if(ev.key==='Escape'){
+    var top=U.topModal();
+    if(top){U.closeModal(top);ev.preventDefault();return;}
+    if(tag==='input'||tag==='textarea'||tag==='select')ev.target.blur();
+    return;}
+  if(ev.ctrlKey||ev.metaKey||ev.altKey)return;
+  if(tag==='input'||tag==='textarea'||tag==='select')return;
+  if(U.topModal())return;
   var r=$('#main').dataset.route;
-  if(ev.code==='Space'){ev.preventDefault();
+  if(ev.code==='Space'){
+    if(tag==='button'||tag==='a')return;
+    ev.preventDefault();
     if(r==='cards'&&srs.queue.length&&srs.pos<srs.queue.length){srs.shown=!srs.shown;U.play('click');render();}
     else U.timerToggle();
     return;}
-  if(r==='cards'&&srs.shown&&['1','2','3','4'].indexOf(ev.key)>=0){
-    var c=srs.queue[srs.pos];if(c){U.gradeCard(c,+ev.key-1);U.play(+ev.key==='1'?'again':'good');srs.done++;srs.pos++;srs.shown=false;U.checkMilestones();render();}
-    return;}
+  if(r==='cards'&&srs.shown&&['1','2','3','4'].indexOf(ev.key)>=0){gradeCurrent(+ev.key-1);return;}
   var k=ev.key.toLowerCase();
   if(k==='f'){go('focus');}
   else if(k==='c'){go('cards');}
@@ -732,16 +776,16 @@ document.addEventListener('keydown',function(ev){
 $$('.scrim').forEach(function(sc){sc.addEventListener('click',function(){
   var id=sc.id==='drawerScrim'?'drawer':sc.id.replace('Scrim','Modal');U.closeModal(id);});});
 window.addEventListener('hashchange',function(){render();window.scrollTo({top:0,behavior:'smooth'});});
-document.addEventListener('visibilitychange',function(){if(document.hidden&&U.T.running)U.T.lastTick=performance.now();});
 
 /* ── boot ── */
 applyTheme();
-if(!location.hash)location.hash='#/dashboard';
+if(!location.hash){try{history.replaceState(null,'','#/dashboard');}catch(e){location.hash='#/dashboard';}}
 U.resetTimer(false);
 render();
 U.checkMilestones();
-if(!S().sessions.length&&!localStorage.getItem('uneheure.seen')){
-  localStorage.setItem('uneheure.seen','1');
+var seen=false;
+try{seen=!!localStorage.getItem('uneheure.seen');if(!seen)localStorage.setItem('uneheure.seen','1');}catch(e){seen=true;}
+if(!S().sessions.length&&!seen){
   setTimeout(function(){U.toast('Welcome. Press F to start your first hour.','ok',{label:'Start now',fn:function(){go('focus');setTimeout(U.timerStart,150);}});},900);
 }
 })();
