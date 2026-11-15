@@ -1,12 +1,12 @@
 /* Une Heure - curriculum + resource data. Every listed resource is free to use. */
 window.UH_DATA = (function () {
 var PHASES = [
-  { id:'p1', n:1, name:'Build the engine', weeks:[1,4], cefr:'A1 foundation', accent:'var(--accent)',
-    goal:'Understand how French works, lock in pronunciation early, bank your first ~300 words.',
+  { id:'p1', n:1, name:'Foundations', weeks:[1,4], cefr:'A1 foundation', accent:'var(--accent)',
+    goal:'Learn how French is built, get the pronunciation right early, and collect your first 300 words.',
     blocks:{
-      anki:'Phonology sub-deck first, then the main course at 10 new cards/day. Expand the sub-decks so you land on the main course, not verb conjugations.',
-      structure:'Language Transfer tracks 1-2 per day. Pause when asked, answer OUT LOUD, no transcript while constructing sentences.',
-      input:'Alice Ayel beginner story-listening. Watch, do not translate, chase the gist. Rewatch favourites.',
+      anki:'Phonology sub-deck first, then the main course at 10 new cards/day. Expand the sub-decks so Anki opens on the main course instead of verb conjugations.',
+      structure:'Language Transfer tracks 1-2 per day. Pause when asked, answer out loud, and skip the transcript while you build sentences.',
+      input:'Alice Ayel beginner story-listening. Watch for the gist and skip translating. Rewatch favourites.',
       output:'Shadow the Language Transfer answers again, then describe your room and your day aloud.',
       log:'Add 5-10 sentences from today as cards. Write down tomorrow\'s first task.'
     },
@@ -15,21 +15,21 @@ var PHASES = [
   { id:'p2', n:2, name:'Reach A2', weeks:[5,12], cefr:'A2', accent:'var(--accent)',
     goal:'Handle everyday situations. Present, past and near future all working.',
     blocks:{
-      anki:'15 new cards/day. Add your own sentence cards from TV5MONDE and Coffee Break - yours beat premade ones.',
+      anki:'15 new cards/day. Add your own sentence cards from TV5MONDE and Coffee Break. They stick better than premade ones.',
       structure:'Coffee Break French Season 1, lessons 1-40 (about 5/week). Alternate days with TV5MONDE Première classe modules.',
       input:'TV5MONDE A1 video exercises - answer the comprehension questions. Start the Duolingo French Podcast.',
       output:'Role-play aloud: order coffee, ask directions, book a room. Write 3-5 sentences, check them in Reverso Context.',
       log:'Grammar on demand only: look up what confuses you on Lawless French. Never study grammar front-to-back.'
     },
-    focusNote:'Start speaking with humans in week 6. Text plus voice notes on HelloTalk. Low pressure, high value.',
+    focusNote:'Start speaking with humans in week 6. Text and voice notes on HelloTalk keep the pressure low.',
     checkpoint:{ week:12, label:'Free DELF A2 sample paper (France Education international): listening and reading, graded with the official key.' } },
   { id:'p3', n:3, name:'Consolidate to early B1', weeks:[13,26], cefr:'A2 to B1', accent:'var(--accent)',
-    goal:'Past tenses fluent, real conversations survivable, listening takes off.',
+    goal:'Use the past tenses fluently, hold real conversations, and follow spoken French more easily.',
     blocks:{
       anki:'15-20 new/day. Move into deck Part 2 (words 500-5000) and start the irregular-verb sub-deck.',
       structure:'Coffee Break French Season 2 - past, future, conditional. Supplement with TV5MONDE A2 exercises.',
       input:'innerFrench from episode 1: listen, read the transcript (max 5 lookups), listen again. RFI twice a week.',
-      output:'Retell the innerFrench episode aloud in 60-90 seconds in your own simpler French. The highest-leverage speaking drill there is.',
+      output:'Retell the innerFrench episode aloud in 60-90 seconds in your own simpler French. It is the most effective speaking drill in the plan.',
       log:'One 45-min HelloTalk or Tandem call weekly. Bring 3 topics. Ask for corrections and log every one.'
     },
     focusNote:'Pronunciation still shaky? Swap the structure block for 10 minutes of public-domain FSI French Basic drills.',
@@ -43,7 +43,7 @@ var PHASES = [
       output:'Argue a position aloud for 2 minutes. Record it. Listen back. Fix one thing. Repeat.',
       log:'Two conversation sessions a week now. Discord voice rooms are free and lower-pressure than one-on-one.'
     },
-    focusNote:'Dictation: the TV5MONDE dictée d\'Archibald forces you to hear every sound and fixes agreement at the same time.',
+    focusNote:'Dictation: the TV5MONDE dictée d\'Archibald makes you hear every sound and drills agreement at the same time.',
     checkpoint:{ week:52, label:'TV5MONDE TCF 90-minute mock exam under real conditions - a calibrated CEFR estimate, free.' } },
   { id:'p5', n:5, name:'Toward B2', weeks:[53,80], cefr:'B2', accent:'var(--accent)',
     goal:'Work and study level French. Only if you want it.',
@@ -52,17 +52,17 @@ var PHASES = [
       structure:'Coffee Break French Season 4 (B2-C1): normal speed, idiom-heavy. TV5MONDE B2 exercises.',
       input:'Native content you would consume anyway. TV5MONDE+ streams films and series free, subtitled in five languages.',
       output:'Weekly extended discussion plus a written argument graded against DELF B2 rubrics.',
-      log:'Track recurring errors, not new words. At this level the error log IS the curriculum.'
+      log:'Track recurring errors, not new words. At this level your error log is the curriculum.'
     },
     focusNote:'Register-switching: formal writing versus casual speech. Notice which one you are hearing.',
     checkpoint:{ week:80, label:'DELF B2 sample paper, all four papers, timed. Compare against the examiner descriptors.' } }
 ];
 var BLOCKS = [
-  { id:'anki',      name:'Card review',         short:'Cards',     min:10, icon:'\u29C9', color:'var(--accent)', tip:'Reviews first, then new cards. Never skip - even on bad days.' },
-  { id:'structure', name:'Structured input',    short:'Structure', min:20, icon:'\u25C8', color:'var(--accent)', tip:'Language Transfer track or Coffee Break lesson. Answer out loud, always.' },
+  { id:'anki',      name:'Card review',         short:'Cards',     min:10, icon:'\u29C9', color:'var(--accent)', tip:'Reviews first, then new cards. Do them even on bad days.' },
+  { id:'structure', name:'Structured input',    short:'Structure', min:20, icon:'\u25C8', color:'var(--accent)', tip:'Language Transfer track or Coffee Break lesson. Answer out loud.' },
   { id:'input',     name:'Listening / reading', short:'Input',     min:15, icon:'\u25CD', color:'var(--accent)', tip:'Transcript-based: listen, read, listen again.' },
-  { id:'output',    name:'Speaking out loud',   short:'Output',    min:10, icon:'\u25C9', color:'var(--accent)', tip:'Shadow, retell, or record yourself. Free, always available, non-negotiable.' },
-  { id:'log',       name:'Log and load',        short:'Log',       min:5,  icon:'\u270E', color:'var(--accent)', tip:'Add 5-10 sentences as cards; write down tomorrow\'s first task.' }
+  { id:'output',    name:'Speaking out loud',   short:'Output',    min:10, icon:'\u25C9', color:'var(--accent)', tip:'Shadow, retell, or record yourself. Free and always available.' },
+  { id:'log',       name:'Log and plan',        short:'Log',       min:5,  icon:'\u270E', color:'var(--accent)', tip:'Add 5-10 sentences as cards; write down tomorrow\'s first task.' }
 ];
 var PREMIERE = ['Greetings','Hobbies','Meals','Accommodation','Work','Health','Trips'];
 function buildWeeks(){
@@ -74,13 +74,13 @@ function buildWeeks(){
     if (w<=4){
       a=(w-1)*10+1; b=Math.min(w*10,40);
       title='Language Transfer '+a+'-'+b;
-      detail='Ten tracks a week finishes the whole 40-track intro course inside month one.';
+      detail='Ten tracks a week gets you through the 40-track intro course in the first month.';
       tasks=[{t:'Language Transfer tracks '+a+'-'+b,tag:'structure'},
              {t:'Card phonology sub-deck, then 10 new words/day',tag:'anki'},
              {t:'3 Alice Ayel beginner stories (rewatch one)',tag:'input'},
              {t:'Forvo-check 10 words you are unsure how to say',tag:'output'}];
       if(w===1) tasks.push({t:'Install Anki and the free 5000-word frequency deck',tag:'anki'});
-      if(w===4) tasks.push({t:'CHECKPOINT - TV5MONDE level test + 60-second recording',tag:'check',check:true});
+      if(w===4) tasks.push({t:'Checkpoint: TV5MONDE level test + 60-second recording',tag:'check',check:true});
     } else if (w<=12){
       i=w-4; a=(i-1)*5+1; b=Math.min(i*5,40); mod=PREMIERE[Math.min(i-1,PREMIERE.length-1)];
       title='Coffee Break S1, lessons '+a+'-'+b;
@@ -90,8 +90,8 @@ function buildWeeks(){
              {t:'15 new cards/day plus your own sentence cards',tag:'anki'},
              {t:'2 Duolingo French Podcast episodes',tag:'input'},
              {t:'Role-play aloud: 3 everyday situations',tag:'output'}];
-      if(w===6) tasks.push({t:'FIRST HUMAN CONTACT - HelloTalk text + voice notes',tag:'speak',check:true});
-      if(w===12) tasks.push({t:'CHECKPOINT - DELF A2 sample paper (listening + reading)',tag:'check',check:true});
+      if(w===6) tasks.push({t:'First conversation: HelloTalk text and voice notes',tag:'speak',check:true});
+      if(w===12) tasks.push({t:'Checkpoint: DELF A2 sample paper (listening + reading)',tag:'check',check:true});
     } else if (w<=26){
       i=w-12; a=Math.min((i-1)*3+1,40); b=Math.min(i*3,40); ep=(i-1)*3+1;
       title='Coffee Break S2, lessons '+a+'-'+b;
@@ -102,7 +102,7 @@ function buildWeeks(){
              {t:'Retell one episode aloud in 90 seconds',tag:'output'},
              {t:'45-min exchange call + log every correction',tag:'speak'}];
       if(w===13) tasks.push({t:'Open the frequency deck Part 2 + irregular-verb sub-deck',tag:'anki'});
-      if(w===26) tasks.push({t:'CHECKPOINT - Full DELF B1 sample paper, 4 sections',tag:'check',check:true});
+      if(w===26) tasks.push({t:'Checkpoint: Full DELF B1 sample paper, 4 sections',tag:'check',check:true});
     } else if (w<=52){
       i=w-26; a=Math.min((i-1)*2+1,40); b=Math.min(i*2,40); ep=43+(i-1)*3;
       title='Coffee Break S3, lessons '+a+'-'+b;
@@ -114,7 +114,7 @@ function buildWeeks(){
              {t:'2-minute recorded argument + self-review',tag:'output'},
              {t:'2 conversation sessions (Discord voice room counts)',tag:'speak'}];
       if(w===40) tasks.push({t:'Dictation week - dictée d\'Archibald x3',tag:'output'});
-      if(w===52) tasks.push({t:'CHECKPOINT - TV5MONDE TCF 90-minute mock exam',tag:'check',check:true});
+      if(w===52) tasks.push({t:'Checkpoint: TV5MONDE TCF 90-minute mock exam',tag:'check',check:true});
     } else {
       i=w-52; a=Math.min((i-1)*2+1,40); b=Math.min(i*2,40);
       title='Coffee Break S4, lessons '+a+'-'+b;
@@ -124,7 +124,7 @@ function buildWeeks(){
              {t:'One native film or series episode on TV5MONDE+',tag:'input'},
              {t:'Written argument, graded against DELF B2 descriptors',tag:'output'},
              {t:'Extended discussion session',tag:'speak'}];
-      if(w===80) tasks.push({t:'CHECKPOINT - DELF B2 sample paper, all four papers, timed',tag:'check',check:true});
+      if(w===80) tasks.push({t:'Checkpoint: DELF B2 sample paper, all four papers, timed',tag:'check',check:true});
     }
     weeks.push({w:w,phase:ph.id,title:title,detail:detail,tasks:tasks,checkpoint:ph.checkpoint.week===w?ph.checkpoint.label:null});
   }
@@ -286,22 +286,22 @@ var SEED_CARDS = [
 var MILESTONES = [
   {id:'first',icon:'\u2726',name:'First hour',desc:'Complete one full session.',k:'sessions',need:1},
   {id:'week',icon:'\u2737',name:'Seven days',desc:'Hit a 7-day streak.',k:'bestStreak',need:7},
-  {id:'month',icon:'\u25D4',name:'Thirty hours',desc:'Bank 30 focused hours.',k:'hours',need:30},
+  {id:'month',icon:'\u25D4',name:'Thirty hours',desc:'Log 30 focused hours.',k:'hours',need:30},
   {id:'cards100',icon:'\u29C9',name:'100 cards live',desc:'Have 100 cards in your collection.',k:'cardCount',need:100},
   {id:'speak',icon:'\u25C9',name:'First speaking',desc:'Log a session with speaking.',k:'speakSessions',need:1},
   {id:'a2',icon:'\u25B2',name:'A2 reached',desc:'Complete week 12 of the plan.',k:'weeksDone',need:12},
   {id:'rev500',icon:'\u27F3',name:'500 reviews',desc:'Grade 500 cards.',k:'reviews',need:500},
   {id:'streak30',icon:'\u2739',name:'Thirty-day streak',desc:'A full month without a miss.',k:'bestStreak',need:30},
   {id:'b1',icon:'\u2605',name:'B1 territory',desc:'Complete week 52 of the plan.',k:'weeksDone',need:52},
-  {id:'century',icon:'\u25C6',name:'100 hours',desc:'Bank 100 focused hours.',k:'hours',need:100}
+  {id:'century',icon:'\u25C6',name:'100 hours',desc:'Log 100 focused hours.',k:'hours',need:100}
 ];
 var RULES = [
-  ['Never skip the cards','On a terrible day, do only the 10 minutes of reviews. Streak preservation beats intensity.','var(--accent)'],
-  ['Answer out loud, always','Language Transfer works by making you construct sentences. Passive listening wastes the method.','var(--accent)'],
-  ['Passive listening is bonus','Commute, chores, walking. It multiplies progress but cannot replace the focused hour.','var(--accent)'],
+  ['Never skip the cards','On a terrible day, do only the 10 minutes of reviews. Keeping the streak matters more than intensity.','var(--accent)'],
+  ['Answer out loud, always','Language Transfer works by making you construct sentences. Listening passively skips the part that works.','var(--accent)'],
+  ['Passive listening is bonus','Commute, chores, walking. It adds to your progress but does not replace the focused hour.','var(--accent)'],
   ['Do not collect resources','Pick the ones named in each phase and ignore the rest until the phase changes.','var(--accent)'],
-  ['Speak from week 6, badly','Waiting until you are ready is the number one reason people plateau at reading-only French.','var(--accent)'],
-  ['Keep an error log','Every partner correction goes into a note, then into a card. Recurring errors are your real curriculum.','var(--accent)'],
+  ['Speak from week 6, badly','People who wait until they feel ready often stall at reading-only French.','var(--accent)'],
+  ['Keep an error log','Every partner correction goes into a note, then into a card. Recurring errors show you what to study next.','var(--accent)'],
   ['Mind the free-tier traps','The Anki iOS app is paid (use AnkiWeb). progress.lawlessfrench.com caps at 10 kwizzes per month (use www). Coffee Break course packs are paid; the podcast is not.','var(--accent)']
 ];
 var CEFR = [

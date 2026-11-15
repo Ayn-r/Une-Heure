@@ -61,7 +61,7 @@ function load(){
 var S=load(), saveT=null;
 function save(){clearTimeout(saveT);saveT=setTimeout(function(){
   try{localStorage.setItem(KEY,JSON.stringify(S));var e=$('#storageState');if(e)e.textContent='saved '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
-  catch(err){var e2=$('#storageState');if(e2)e2.textContent='storage full — export a backup';toast('Could not save locally. Export a backup.','warn');}
+  catch(err){var e2=$('#storageState');if(e2)e2.textContent='storage full, export a backup';toast('Could not save locally. Export a backup.','warn');}
 },150);}
 
 function totalMinutes(){return S.sessions.reduce(function(a,s){return a+(s.minutes||0);},0);}
@@ -192,13 +192,13 @@ function blockFinished(skipped){
 }
 function finishSession(){T.running=false;stopLoop();setAmbient(false);play('complete');confetti();
   openComplete(sessionTotal(),blockList().map(function(b){return b.id;}),false);renderTimerUI();}
-function logPartial(){var m=Math.round(T.elapsedTotal/60);if(m<1){toast('Nothing to log yet — run the timer first.','warn');return;}
+function logPartial(){var m=Math.round(T.elapsedTotal/60);if(m<1){toast('Nothing to log yet. Run the timer first.','warn');return;}
   openComplete(m,Object.keys(today().blocks).filter(function(k){return today().blocks[k];}),true);}
 var pending=null;
 function openComplete(mins,blocks,partial){
   var w=currentWeek();pending={minutes:mins,blocks:blocks,week:w,phase:phaseOf(w).id,partial:!!partial};
   $('#cmTitle').textContent=partial?'Session logged':'Hour complete';
-  $('#cmSub').textContent=partial?'Partial sessions still count. Consistency beats perfection.':'Sixty focused minutes banked. Here is what you just earned.';
+  $('#cmSub').textContent=partial?'Partial sessions still count.':'Sixty minutes logged.';
   var st=streaks();
   $('#cmStats').innerHTML='<div class="cm-stat"><b>'+mins+'</b><span>minutes</span></div><div class="cm-stat"><b>'+blocks.length+'/5</b><span>blocks</span></div><div class="cm-stat"><b>'+(st.cur+(sessionDates()[todayKey()]?0:1))+'</b><span>day streak</span></div>';
   $('#cmNote').value='';$('#cmCards').value='';openModal('completeModal');
@@ -292,16 +292,16 @@ function viewDashboard(){
   var h=new Date().getHours(),greet=(h>=5&&h<18)?'Bonjour':'Bonsoir';
   var nm=S().settings.name?', '+esc(S().settings.name):'';
   var o='<div class="view stack">';
-  o+='<section class="hero"><div class="hero-in"><div><div class="eyebrow">'+greet+nm+' · '+esc(new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'}))+'</div><h1>Week '+w+' — <em>'+esc(ph.name)+'</em></h1><p class="lede">'+esc(ph.goal)+'</p><div class="hero-meta"><span class="chip accent">'+esc(ph.cefr)+'</span><span class="chip">This week: <b>'+esc(wd.title)+'</b></span><span class="chip"><b>'+wp.done+'/'+wp.total+'</b> tasks</span><span class="chip"><b>'+due+'</b> cards due</span></div><div class="hero-actions"><button class="btn btn-primary" data-act="go-focus">Start the hour<span class="kbd">F</span></button><button class="btn btn-ghost" data-act="go-cards">Review '+due+' card'+(due===1?'':'s')+'</button><button class="btn btn-ghost" data-act="go-plan">See week '+w+'</button></div></div><div class="ring-wrap"><div class="ring">'+ringSVG(tm/goal,220,'gToday')+'<div class="ring-c"><div class="big">'+tm+'</div><div class="lbl">of '+goal+' min today</div><div class="sm">'+(tm>=goal?'Goal reached. Bravo.':(goal-tm)+' minutes to go')+'</div></div></div><div class="tiny dim">'+dc+' of 5 blocks ticked</div></div></div></section>';
+  o+='<section class="hero"><div class="hero-in"><div><div class="eyebrow">'+greet+nm+' · '+esc(new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'}))+'</div><h1>Week '+w+' &middot; <em>'+esc(ph.name)+'</em></h1><p class="lede">'+esc(ph.goal)+'</p><div class="hero-meta"><span class="chip accent">'+esc(ph.cefr)+'</span><span class="chip">This week: <b>'+esc(wd.title)+'</b></span><span class="chip"><b>'+wp.done+'/'+wp.total+'</b> tasks</span><span class="chip"><b>'+due+'</b> cards due</span></div><div class="hero-actions"><button class="btn btn-primary" data-act="go-focus">Start the hour<span class="kbd">F</span></button><button class="btn btn-ghost" data-act="go-cards">Review '+due+' card'+(due===1?'':'s')+'</button><button class="btn btn-ghost" data-act="go-plan">See week '+w+'</button></div></div><div class="ring-wrap"><div class="ring">'+ringSVG(tm/goal,220,'gToday')+'<div class="ring-c"><div class="big">'+tm+'</div><div class="lbl">of '+goal+' min today</div><div class="sm">'+(tm>=goal?'Goal reached. Bravo.':(goal-tm)+' minutes to go')+'</div></div></div><div class="tiny dim">'+dc+' of 5 blocks ticked</div></div></div></section>';
   o+='<section class="stats">'+tile('Total focus',U.fmtHours(mins)+'<small>h</small>',st.sessions+' sessions logged','var(--accent)')+tile('Current streak',st.curStreak+'<small>d</small>','best '+st.bestStreak+' days','var(--accent)')+tile('Plan progress',Math.round(st.weeksDone/80*100)+'<small>%</small>',st.weeksDone+' of 80 weeks','var(--accent)')+tile('Cards live',S().cards.length,due+' due today','var(--accent)')+tile('Est. level',pos.from.lvl,pos.hoursToNext>0?Math.ceil(pos.hoursToNext)+'h to '+pos.to.lvl:'top of the scale','var(--accent)')+'</section>';
   o+='<div class="split"><section class="card"><div class="card-h"><h3>Today\'s five blocks</h3><span class="sub">'+U.sessionTotal()+' min template</span></div><div class="blocks" id="todayBlocks">'+todayBlocksHTML()+'</div><div class="note" style="margin-top:14px"><b>Rule one:</b> never skip the cards. On a terrible day, do only the ten minutes of reviews. Streak preservation beats intensity.</div></section><div class="stack">';
   o+='<section class="card tight"><div class="card-h"><h3>Today\'s speaking prompt</h3><span class="sub">say it out loud</span></div><p class="quote" id="promptText" lang="fr">&laquo;&nbsp;'+esc(promptFor(ph.id))+'&nbsp;&raquo;</p><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" data-act="new-prompt">Another prompt</button><button class="btn btn-sm btn-primary" data-act="prompt-focus">Time 10 minutes</button></div></section>';
   o+='<section class="card tight"><div class="card-h"><h3>This week\'s tasks</h3><span class="sub">'+wp.done+'/'+wp.total+'</span></div><div class="tasks">'+wd.tasks.slice(0,4).map(function(t,i){return taskHTML(w,i,t);}).join('')+'</div>'+(wd.tasks.length>4?'<button class="btn btn-sm btn-ghost" style="margin-top:10px;width:100%" data-act="go-plan">All '+wd.tasks.length+' tasks &rarr;</button>':'')+'</section></div></div>';
-  o+='<section class="card"><div class="card-h"><h3>The five phases</h3><span class="sub">click a phase to open its weeks</span></div><div class="rail">'+D.PHASES.map(function(p){
+  o+='<section class="card"><div class="card-h"><h3>The five phases</h3><span class="sub">tap a phase to see its weeks</span></div><div class="rail">'+D.PHASES.map(function(p){
     var tot=p.weeks[1]-p.weeks[0]+1,dn=0;for(var i=p.weeks[0];i<=p.weeks[1];i++){var q=U.weekProgress(i);if(q.total&&q.done===q.total)dn++;}
     var cur=p.id===ph.id;
     return '<button class="ph'+(cur?' cur':'')+'" style="--pc:'+p.accent+'" data-phase="'+p.id+'">'+(cur?'<span class="ph-badge">NOW</span>':'')+'<div class="ph-in"><div class="ph-n">Phase '+p.n+' · '+esc(p.cefr)+'</div><div class="ph-name">'+esc(p.name)+'</div><div class="ph-w">Weeks '+p.weeks[0]+'-'+p.weeks[1]+'</div><div class="ph-bar">'+bar(dn/tot,p.accent)+'<div class="tiny dim" style="margin-top:5px">'+dn+'/'+tot+' weeks complete</div></div></div></button>';}).join('')+'</div></section>';
-  o+='<section class="card"><div class="card-h"><h3>Seven rules that make or break this</h3></div><div class="rules">'+D.RULES.map(function(r){return '<div class="rule" style="--rlc:'+r[2]+'"><b>'+esc(r[0])+'</b><span>'+esc(r[1])+'</span></div>';}).join('')+'</div></section></div>';
+  o+='<section class="card"><div class="card-h"><h3>Seven rules</h3></div><div class="rules">'+D.RULES.map(function(r){return '<div class="rule" style="--rlc:'+r[2]+'"><b>'+esc(r[0])+'</b><span>'+esc(r[1])+'</span></div>';}).join('')+'</div></section></div>';
   return o;
 }
 
@@ -364,7 +364,7 @@ window.UH_renderTimerUI=function(){
       if(dl)dl.textContent=T.mode==='break'?'break':b.short;
     }
   }
-  document.title=(T.running?U.fmtClock(left)+' \u00B7 ':'')+'Une Heure \u2014 French Focus Studio';
+  document.title=(T.running?U.fmtClock(left)+' \u00B7 ':'')+'Une Heure \u00B7 French Focus Studio';
   var card=$('#timerCard');if(!card)return;
   card.style.setProperty('--tc',T.mode==='break'?'var(--accent)':b.color);
   var tot=T.mode==='break'?Math.max(1,(T.breaksTaken%3===0?S().settings.longBreakMin:S().settings.breakMin)*60):Math.max(1,T.total);
@@ -417,7 +417,7 @@ function viewCards(){
   o+='<div class="filters" style="margin-bottom:14px"><select id="srsDeck" style="max-width:220px" aria-label="Review deck"><option value="all"'+(dk==='all'?' selected':'')+'>All decks</option>'+decks().map(function(d){return '<option value="'+esc(d)+'"'+(dk===d?' selected':'')+'>'+esc(d)+'</option>';}).join('')+'</select><button class="btn btn-sm btn-ghost" data-act="srs-restart">Restart queue</button><button class="btn btn-sm btn-primary" data-act="card-new">+ New card</button></div>';
   if(!srs.queue.length)buildQueue();
   if(srs.pos>=srs.queue.length){
-    o+='<div class="empty"><div class="em">\u2726</div><h3>'+(srs.done?'Queue cleared':'Nothing due right now')+'</h3><p class="tiny">'+(srs.done?srs.done+' cards graded. Come back tomorrow — the intervals do the work.':'Every card is scheduled for a future day. Add new ones or study ahead.')+'</p><div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn btn-sm btn-primary" data-act="card-new">Add a card</button><button class="btn btn-sm btn-ghost" data-act="srs-ahead">Study ahead (20 cards)</button></div></div>';
+    o+='<div class="empty"><div class="em">\u2726</div><h3>'+(srs.done?'Queue cleared':'Nothing due right now')+'</h3><p class="tiny">'+(srs.done?srs.done+' cards reviewed. Come back tomorrow.':'Every card is scheduled for a future day. Add new ones or study ahead.')+'</p><div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn btn-sm btn-primary" data-act="card-new">Add a card</button><button class="btn btn-sm btn-ghost" data-act="srs-ahead">Study ahead (20 cards)</button></div></div>';
   }else{
     var c=srs.queue[srs.pos];
     o+='<div class="srs-stage"><div class="flash'+(srs.shown?' flip':'')+'" id="flash" role="button" tabindex="0" aria-label="Reveal answer"><div class="side">'+(srs.shown?'meaning':'french')+' · '+(srs.pos+1)+' / '+srs.queue.length+'</div><div class="front" lang="fr">'+esc(c.front)+'</div>'+(srs.shown?'<div class="back">'+esc(c.back)+'</div>':'<div class="tiny dim">click, or press Space, to reveal</div>')+'<div class="tags"><span class="tag">'+esc(c.deck||'Unsorted')+'</span>'+(c.tags||[]).map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('')+'</div></div>';
@@ -439,8 +439,8 @@ function viewCards(){
     if(list.length>200)o+='<p class="tiny dim" style="margin-top:10px">Showing the first 200 of '+list.length+'. Narrow the search to see more.</p>';
   }
   o+='</section>';
-  o+='<section class="card"><div class="card-h"><h3>Error log</h3><span class="sub">recurring mistakes are your real curriculum</span></div><div class="field-row" style="align-items:end"><label class="field" style="margin:0"><span>What I got wrong</span><input type="text" id="errText" placeholder="said « je suis allé » for elle"></label><label class="field" style="margin:0"><span>Correction</span><input type="text" id="errFix" placeholder="elle est allée — agreement with être"></label></div><div style="margin:10px 0 14px"><button class="btn btn-sm btn-primary" data-act="err-add">Log error</button> <button class="btn btn-sm btn-ghost" data-act="err-to-cards">Turn unfixed errors into cards</button></div>';
-  if(!S().errors.length)o+='<p class="tiny dim">Nothing logged yet. After every exchange call, add the corrections your partner gave you.</p>';
+  o+='<section class="card"><div class="card-h"><h3>Error log</h3><span class="sub">your repeat mistakes</span></div><div class="field-row" style="align-items:end"><label class="field" style="margin:0"><span>What I got wrong</span><input type="text" id="errText" placeholder="said « je suis allé » for elle"></label><label class="field" style="margin:0"><span>Correction</span><input type="text" id="errFix" placeholder="elle est allée (agreement with être)"></label></div><div style="margin:10px 0 14px"><button class="btn btn-sm btn-primary" data-act="err-add">Log error</button> <button class="btn btn-sm btn-ghost" data-act="err-to-cards">Turn unfixed errors into cards</button></div>';
+  if(!S().errors.length)o+='<p class="tiny dim">Nothing logged yet. After each conversation, add the corrections you got.</p>';
   else o+='<div class="tasks">'+S().errors.slice().reverse().map(function(e){return '<div class="err-item'+(e.resolved?' fixed':'')+'"><div style="flex:1"><div class="et">'+esc(e.text)+'</div>'+(e.fix?'<div class="ef">\u2192 '+esc(e.fix)+'</div>':'')+'<div class="tiny dim" style="margin-top:3px">'+esc(U.niceDate(e.date))+'</div></div><button class="rowbtn" data-err-toggle="'+e.id+'" title="Toggle resolved">'+(e.resolved?'\u21BA':'\u2713')+'</button><button class="rowbtn del" data-err-del="'+e.id+'" title="Delete">\u2715</button></div>';}).join('')+'</div>';
   o+='</section></div>';
   return o;
@@ -459,7 +459,7 @@ function viewLibrary(){
     var col=(D.CATS.filter(function(c){return c.id===r.cat;})[0]||{}).color||'var(--accent)';
     var st=S().starred.indexOf(r.id)>=0;
     return '<article class="res" style="--rc:'+col+'"><div class="res-top"><h4>'+esc(r.name)+'</h4><span class="res-badge'+(r.warn?' warn':'')+'">'+esc(r.badge)+'</span></div><div class="res-meta"><span class="chip" style="border-color:var(--line2);color:var(--accent)">'+esc(r.level)+'</span><span class="chip">'+esc((D.CATS.filter(function(c){return c.id===r.cat;})[0]||{}).label||r.cat)+'</span></div><p class="res-desc">'+esc(r.desc)+'</p><div class="res-note">'+esc(r.note)+'</div><div class="res-foot"><span class="res-use">'+esc(r.use)+'</span><span class="spacer"></span><button class="star'+(st?' on':'')+'" data-star="'+r.id+'" title="Star">\u2605</button><a class="btn btn-sm btn-primary" href="'+esc(r.url)+'" target="_blank" rel="noopener noreferrer">Open \u2197</a></div></article>';}).join('')+'</div>';}
-  o+='<section class="card"><div class="card-h"><h3>Free-tier traps</h3></div><div class="rules">'+D.RULES.slice(6).concat([['Anki on iPhone','The desktop app, AnkiDroid and AnkiWeb are free. Only the official iOS app is paid — review in the browser instead.','var(--accent)'],['Coffee Break','The podcast audio for all four seasons is free. The video lessons, notes and exercise packs are the paid part.','var(--accent)']]).map(function(r){return '<div class="rule" style="--rlc:'+r[2]+'"><b>'+esc(r[0])+'</b><span>'+esc(r[1])+'</span></div>';}).join('')+'</div></section></div>';
+  o+='<section class="card"><div class="card-h"><h3>Free-tier traps</h3></div><div class="rules">'+D.RULES.slice(6).concat([['Anki on iPhone','The desktop app, AnkiDroid and AnkiWeb are free. Only the official iOS app is paid, so review in the browser instead.','var(--accent)'],['Coffee Break','The podcast audio for all four seasons is free. The video lessons, notes and exercise packs are the paid part.','var(--accent)']]).map(function(r){return '<div class="rule" style="--rlc:'+r[2]+'"><b>'+esc(r[0])+'</b><span>'+esc(r[1])+'</span></div>';}).join('')+'</div></section></div>';
   return o;
 }
 
@@ -515,15 +515,15 @@ function viewProgress(){
   S().sessions.forEach(function(s){(s.blocks||[]).forEach(function(id){if(byBlock[id]!=null)byBlock[id]+=S().settings.blockMins[id]||0;});});
   var totB=Object.keys(byBlock).reduce(function(a,k){return a+byBlock[k];},0)||1;
   var o='<div class="view stack"><section class="stats">'+tile('Focused hours',U.fmtHours(mins)+'<small>h</small>',st.sessions+' sessions','var(--accent)')+tile('Best streak',st.bestStreak+'<small>d</small>','currently '+st.curStreak,'var(--accent)')+tile('Cards graded',st.reviews,S().cards.length+' in collection','var(--accent)')+tile('Weeks complete',st.weeksDone+'<small>/80</small>',Math.round(st.weeksDone/80*100)+'% of the plan','var(--accent)')+tile('Speaking sessions',st.speakSessions,'output block completed','var(--accent)')+'</section>';
-  o+='<section class="card"><div class="card-h"><h3>Where you are on the CEFR ladder</h3><span class="sub">estimate from focused hours · Cambridge guided-learning figures</span></div><div class="bar-lbl"><span>'+esc(pos.from.lvl)+' → '+esc(pos.to.lvl)+' · '+esc(pos.to.label)+'</span><b>'+Math.round(pos.pct*100)+'%</b></div>'+bar(pos.pct,pos.to.color)+'<div class="legend">'+D.CEFR.map(function(c){return '<span class="lg"><i style="background:'+c.color+'"></i>'+c.lvl+' · '+c.hours+'h · '+esc(c.label)+'</span>';}).join('')+'</div><div class="note" style="margin-top:14px"><b>'+Math.ceil(pos.hoursToNext)+' focused hours</b> to '+pos.to.lvl+' at your current pace — about '+Math.ceil(pos.hoursToNext/(Math.max(1,S().settings.dailyGoal)/60))+' days at '+S().settings.dailyGoal+' min/day. Passive listening during commutes shortens this without touching your hour.</div></section>';
+  o+='<section class="card"><div class="card-h"><h3>Estimated CEFR level</h3><span class="sub">estimate from focused hours · Cambridge guided-learning figures</span></div><div class="bar-lbl"><span>'+esc(pos.from.lvl)+' → '+esc(pos.to.lvl)+' · '+esc(pos.to.label)+'</span><b>'+Math.round(pos.pct*100)+'%</b></div>'+bar(pos.pct,pos.to.color)+'<div class="legend">'+D.CEFR.map(function(c){return '<span class="lg"><i style="background:'+c.color+'"></i>'+c.lvl+' · '+c.hours+'h · '+esc(c.label)+'</span>';}).join('')+'</div><div class="note" style="margin-top:14px"><b>'+Math.ceil(pos.hoursToNext)+' focused hours</b> to '+pos.to.lvl+' at your current pace, about '+Math.ceil(pos.hoursToNext/(Math.max(1,S().settings.dailyGoal)/60))+' days at '+S().settings.dailyGoal+' min/day. Passive listening during commutes shortens this without touching your hour.</div></section>';
   o+='<div class="split"><section class="card"><div class="card-h"><h3>Last 30 days</h3><span class="sub">minutes per day</span></div>'+chartMinutes()+'<div class="legend"><span class="lg"><i style="background:var(--soft)"></i>studied</span><span class="lg"><i style="background:var(--accent)"></i>goal reached</span><span class="lg"><i style="background:var(--accent)"></i>daily goal line</span></div></section>';
   o+='<section class="card"><div class="card-h"><h3>Cumulative hours vs CEFR</h3><span class="sub">since '+esc(U.niceDate(S().startDate))+'</span></div>'+chartCumulative()+'</section></div>';
   o+='<section class="card"><div class="card-h"><h3>Consistency</h3><span class="sub">last 27 weeks</span></div>'+heatmap()+'<div class="legend"><span class="lg"><i style="background:var(--bg2);border:1px solid var(--line)"></i>none</span><span class="lg"><i class="hm-lvl1" style="width:11px;height:11px;border-radius:3px"></i>&lt;20m</span><span class="lg"><i class="hm-lvl2" style="width:11px;height:11px;border-radius:3px"></i>&lt;45m</span><span class="lg"><i class="hm-lvl3" style="width:11px;height:11px;border-radius:3px"></i>&lt;75m</span><span class="lg"><i class="hm-lvl4" style="width:11px;height:11px;border-radius:3px"></i>75m+</span></div></section>';
-  o+='<div class="split"><section class="card"><div class="card-h"><h3>Time by block</h3><span class="sub">is the hour balanced?</span></div><div class="stack" style="gap:11px">'+D.BLOCKS.map(function(b){
+  o+='<div class="split"><section class="card"><div class="card-h"><h3>Time by block</h3><span class="sub">where the hour goes</span></div><div class="stack" style="gap:11px">'+D.BLOCKS.map(function(b){
     var v=byBlock[b.id],p=v/totB;
     return '<div><div class="bar-lbl"><span style="color:'+b.color+'">'+b.icon+' '+esc(b.name)+'</span><b>'+U.fmtHours(v)+'h · '+Math.round(p*100)+'%</b></div>'+bar(p,b.color)+'</div>';}).join('')+'</div><div class="note" style="margin-top:14px"><b>Watch the output share.</b> If speaking sits far below 15%, you are building a reading-only French. Add a conversation session.</div></section>';
   o+='<section class="card"><div class="card-h"><h3>Recent sessions</h3><span class="sub">'+S().sessions.length+' logged</span></div>';
-  if(!S().sessions.length)o+='<div class="empty"><div class="em">\u25D4</div><h3>No sessions yet</h3><p class="tiny">Run the focus timer and your history appears here.</p><button class="btn btn-sm btn-primary" style="margin-top:12px" data-act="go-focus">Start the first hour</button></div>';
+  if(!S().sessions.length)o+='<div class="empty"><div class="em">\u25D4</div><h3>No sessions yet</h3><p class="tiny">Finished sessions show up here.</p><button class="btn btn-sm btn-primary" style="margin-top:12px" data-act="go-focus">Start the first hour</button></div>';
   else o+='<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Min</th><th>Week</th><th>Note</th><th></th></tr></thead><tbody>'+S().sessions.slice().reverse().slice(0,25).map(function(s){
     return '<tr><td>'+esc(U.niceDate(s.date))+(s.partial?' <span class="tag">partial</span>':'')+'</td><td class="mono">'+s.minutes+'</td><td>'+(s.week||'-')+'</td><td class="muted tiny">'+esc(s.note||'—')+'</td><td><button class="rowbtn del" data-sess-del="'+s.id+'" title="Delete">\u2715</button></td></tr>';}).join('')+'</tbody></table></div>';
   o+='</section></div>';
@@ -541,9 +541,9 @@ function drawerHTML(){
   var s=S().settings;
   return '<div class="dw-sec"><h4>You</h4><label class="field"><span>Name (used in the greeting)</span><input type="text" id="setName" value="'+esc(s.name)+'" placeholder="Camille"></label><label class="field"><span>Plan start date</span><input type="date" id="setStart" value="'+esc(S().startDate)+'"></label><label class="field"><span>Daily goal (minutes)</span><input type="number" id="setGoal" min="10" max="240" step="5" value="'+s.dailyGoal+'"></label></div>'+
   '<div class="dw-sec"><h4>Appearance</h4>'+themeSegs()+'<button class="toggle'+(s.sound?' on':'')+'" data-toggle="sound"><span>Sound effects</span><span class="sw"></span></button><button class="toggle'+(s.ambient?' on':'')+'" data-toggle="ambient"><span>Ambient focus drone</span><span class="sw"></span></button></div>'+
-  '<div class="dw-sec" id="dataSec"><h4>Your data</h4><p class="tiny dim">Everything is stored in this browser only. Export regularly — clearing site data erases your progress.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm btn-primary" data-act="export">Export JSON backup</button><button class="btn btn-sm btn-ghost" data-act="export-csv">Export sessions CSV</button><button class="btn btn-sm btn-ghost" data-act="import">Import backup</button></div><input type="file" id="importFile" accept="application/json" hidden></div>'+
-  '<div class="dw-sec"><h4>Danger zone</h4><button class="btn btn-sm btn-danger-ghost" data-act="reset-all">Erase everything and start over</button></div>'+
-  '<div class="dw-sec" id="aboutSec"><h4>About the method</h4><p class="tiny muted">One focused hour, split 10 / 20 / 15 / 10 / 5 across cards, structured input, listening, speaking and logging. Eighty weeks mapped from zero to B2 using only free resources. Passive listening outside the hour is a bonus multiplier, never a replacement.</p><p class="tiny dim">Level estimates use Cambridge guided-learning-hour figures (A1 ~100h, A2 ~200h, B1 ~400h, B2 ~600h). They are a guide, not a certificate.</p><p class="tiny dim">Keyboard: <b>F</b> focus · <b>C</b> cards · <b>P</b> plan · <b>L</b> library · <b>G</b> progress · <b>Space</b> play/pause or reveal · <b>1–4</b> grade · <b>S</b> mute · <b>Esc</b> close.</p></div>';
+  '<div class="dw-sec" id="dataSec"><h4>Your data</h4><p class="tiny dim">Everything stays in this browser. Export a backup now and then, because clearing site data deletes your progress.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm btn-primary" data-act="export">Export JSON backup</button><button class="btn btn-sm btn-ghost" data-act="export-csv">Export sessions CSV</button><button class="btn btn-sm btn-ghost" data-act="import">Import backup</button></div><input type="file" id="importFile" accept="application/json" hidden></div>'+
+  '<div class="dw-sec"><h4>Reset</h4><button class="btn btn-sm btn-danger-ghost" data-act="reset-all">Erase everything and start over</button></div>'+
+  '<div class="dw-sec" id="aboutSec"><h4>About the method</h4><p class="tiny muted">One focused hour, split 10 / 20 / 15 / 10 / 5 across cards, structured input, listening, speaking and logging. Eighty weeks mapped from zero to B2 using only free resources. Passive listening outside the hour is a bonus multiplier, never a replacement.</p><p class="tiny dim">Level estimates use Cambridge guided-learning-hour figures (A1 ~100h, A2 ~200h, B1 ~400h, B2 ~600h). Treat them as a rough guide.</p><p class="tiny dim">Keyboard: <b>F</b> focus · <b>C</b> cards · <b>P</b> plan · <b>L</b> library · <b>G</b> progress · <b>Space</b> play/pause or reveal · <b>1–4</b> grade · <b>S</b> mute · <b>Esc</b> close.</p></div>';
 }
 
 /* ── router / render ── */
@@ -553,7 +553,7 @@ function render(){
   var r=route();S().ui.route=r;
   var main=$('#main');main.dataset.route=r;
   try{main.innerHTML=VIEWS[r]();}
-  catch(err){console.error(err);main.innerHTML='<div class="view"><section class="card"><div class="card-h"><h3>Something went wrong</h3></div><p class="muted">This section could not be drawn. Your data is untouched. Try another tab, or open Settings and export a backup before reloading.</p></section></div>';}
+  catch(err){console.error(err);main.innerHTML='<div class="view"><section class="card"><div class="card-h"><h3>Something went wrong</h3></div><p class="muted">This page failed to load. Your data is safe. Try another tab, or export a backup from Settings.</p></section></div>';}
   $$('#tabs a').forEach(function(a){a.classList.toggle('on',a.dataset.route===r);});
   var st=U.streaks();$('#streakNum').textContent=st.cur;$('#streakPill').classList.toggle('hot',st.cur>=3);
   $('#soundBtn').setAttribute('aria-pressed',String(S().settings.sound));
@@ -622,7 +622,7 @@ function importJSON(file){
 }
 function applyTheme(){var s=S().settings,h=document.documentElement,m=document.querySelector('meta[name="theme-color"]');
   h.removeAttribute('data-theme');h.setAttribute('data-mode',s.mode||'dark');h.setAttribute('data-palette',s.palette||'moss');
-  if(m)m.setAttribute('content',{'moss-dark':'#1A1F19','moss-light':'#F1F2EA','rose-dark':'#1F1819','rose-light':'#F7EFEC'}[(s.palette||'moss')+'-'+(s.mode||'dark')]);}
+  if(m)m.setAttribute('content',{'moss-dark':'#12160F','moss-light':'#E9ECDF','rose-dark':'#181112','rose-light':'#F3E8E4'}[(s.palette||'moss')+'-'+(s.mode||'dark')]);}
 
 /* ── global events ── */
 document.addEventListener('click',function(ev){
@@ -681,7 +681,7 @@ document.addEventListener('click',function(ev){
     try{var u=new SpeechSynthesisUtterance(sc.front);u.lang='fr-FR';u.rate=.9;
       var vs=speechSynthesis.getVoices().filter(function(v){return /^fr/i.test(v.lang);});if(vs.length)u.voice=vs[0];
       speechSynthesis.cancel();speechSynthesis.speak(u);U.toast('Playing with your browser voice','info');}
-    catch(e){U.toast('Speech synthesis unavailable here — use Forvo instead.','warn');}
+    catch(e){U.toast('Speech synthesis is not available here. Use Forvo instead.','warn');}
     return;}
   if(d.cardEdit){openCardEditor(d.cardEdit);return;}
   if(d.cardDel){deleteCard(d.cardDel);return;}
